@@ -67,6 +67,7 @@
 (require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
 (require 'eros)            ;; Simple Emacs Overlays
 (require 'org)
+(require 'bind-key)
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
