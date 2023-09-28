@@ -235,31 +235,31 @@
     (process-send-string repl "\n")
 
     ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-    (set-process-filter repl (rdd---main-callback prompt))
+    (set-process-filter repl (rdd---main-callback cmd prompt))
 
     ;; Return the REPL process to the user.
     repl))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun rdd---main-callback (prompt)
- `(lambda (process output)
+(defun rdd---main-callback (cli prompt)
+  `(lambda (process output)
 
-           ;; The *REPL* buffer shows things exactly as they'd look like
-           ;; in a standard interaction in the terminal.
-           (rdd---insertion-filter process output)
+     ;; The *REPL* buffer shows things exactly as they'd look like
+     ;; in a standard interaction in the terminal.
+     (rdd---insertion-filter process output)
 
-           ;; This is done to provide a richer, friendlier, interaction.
-           ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
-           (setq output (s-trim (s-replace-regexp ,prompt "" (s-replace "\r\n" "" output))))
+     ;; This is done to provide a richer, friendlier, interaction.
+     ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
+     (setq output (s-trim (s-replace-regexp ,prompt "" (s-replace "\r\n" "" output))))
 
-           ;; thread `output' through output hooks
-           ;; i.e., run all hooks on REPL output, each possibly modifying output
-           (require 'cl)
-           (cl-loop for fun in repl-driven-development/output-hook
-                    do (setq output (funcall fun output)))
+     ;; thread `output' through output hooks
+     ;; i.e., run all hooks on REPL output, each possibly modifying output
+     (require 'cl)
+     (cl-loop for fun in repl-driven-development/output-hook
+              do (setq output (funcall fun output)))
 
-           (rdd---insert-or-echo output)))
+     (rdd---insert-or-echo ,cli output)))
 
 (defun rdd---install-any-not-yet-installed-docs (docs)
   "Install any not-yet-installed docs; returns a List<String> of the intalled docs."
@@ -272,11 +272,12 @@
       (--map (unless (member it installed) (devdocs-install (list (cons 'slug it)))) docs))
     docs))
 
-(defun rdd---insert-or-echo (output)
+(defun rdd---insert-or-echo (cli output)
   "If there's a C-u, then insert the output; else echo it in overlay"
   (cl-assert (stringp output))
   (pcase current-prefix-arg
-    ('(4) (unless (equal output (s-trim rdd---current-input)) (insert " " output)))
+    ('(4) (unless (equal output (s-trim rdd---current-input))
+            (insert " " (funcall (intern (format "repl/%s/read" cli)) output)))) ;; (funcall (intern "repl/node/read") "hola")
     ;; All other prefixes are handled by repl-fun-name, above.
     (_
      ;; Show output as an overlay at the current cursor position
@@ -299,69 +300,118 @@
        (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
          (eros--make-result-overlay output
            :format  " ⮕ %s"
-           :duration repl-driven-development/echo-duration)))))
-  )
+           )
 
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 ;; (fmakunbound #'repl-driven-development--make-repl-function)
 (defmacro rdd---make-repl-function (repl keys cmd docs incantation-to-restart-repl)
- ;; cl-defmethod repl-driven-development--make-repl-function ((repl process) (cli string) (repl-fun-name string) (docs list))
+  ;; cl-defmethod repl-driven-development--make-repl-function ((repl process) (cli string) (repl-fun-name string) (docs list))
   "Constructs code denoting a function that sends a region to a REPL process"
   (-let* ((repl-fun-name (intern (concat "repl/" cmd))))
-      `(progn
-    ;; TODO: Consider deleting this and setting the callback for repl testing directly a la set-process-filter.
-    (defun ,(intern (format "%s/sync" repl-fun-name)) (string)
-     "Block until we see the snetiantial marker; then emit the repl output. This is an sync call to the repl."
-     (thread-join (make-thread `(lambda ()
-       (setq DONE (format "\"DONE TEST %s\"" (gensym)))
-       ;; (process-send-string jshell (format "Thread.sleep(3000)\n1 + 9\n%s\n" DONE))
-       (process-send-string ,,repl (format "%s\n%s\n" ,string DONE))
-       (setq my/threshold 0)
-       (setq results nil)
-       (setq waiting-seconds .5) ;; half a second
-       (loop
-        (sleep-for .01)
-        (incf my/threshold)
-        (push repl-driven-development-current--output results)
-        (when (or (< 1000 (* my/threshold waiting-seconds)) (s-matches? DONE repl-driven-development-current--output))
-          (return)))
-       (thread-yield)
-       (cadr (-uniq results))))))
+    `(progn
+       ;; TODO: Consider deleting this and setting the callback for repl testing directly a la set-process-filter.
+       (defun ,(intern (format "%s/sync" repl-fun-name)) (string)
+         "Block until we see the snetiantial marker; then emit the repl output. This is an sync call to the repl."
+         (thread-join (make-thread `(lambda ()
+                                      (setq DONE (format "\"DONE TEST %s\"" (gensym)))
+                                      ;; (process-send-string jshell (format "Thread.sleep(3000)\n1 + 9\n%s\n" DONE))
+                                      (process-send-string ,,repl (format "%s\n%s\n" ,string DONE))
+                                      (setq my/threshold 0)
+                                      (setq results nil)
+                                      (setq waiting-seconds .5) ;; half a second
+                                      (loop
+                                       (sleep-for .01)
+                                       (incf my/threshold)
+                                       (push repl-driven-development-current--output results)
+                                       (when (or (< 1000 (* my/threshold waiting-seconds)) (s-matches? DONE repl-driven-development-current--output))
+                                         (return)))
+                                      (thread-yield)
+                                      (cadr (-uniq results))))))
 
- (bind-key* (s-join " " (mapcar #'pp-to-string ,keys))
-  (defun ,repl-fun-name (region-beg region-end)
-    ,(rdd---make-repl-function-docstring cmd "")
-    (interactive "r")
+       ;; (format "%s/jump-to-process-buffer" repl-fun-name)
+       ;; (format "%s/restart" repl-fun-name)
+       ;; (format "%s/docs-at-point" repl-fun-name)
+       ;; (format "%s/submit" repl-fun-name)
 
-    (require 'pulsar)
-    (setq pulsar-face 'pulsar-yellow)
-    (pulsar-mode +1)
-    (pulsar-pulse-line)
+       (defun ,(intern (format "%s/jump-to-process-buffer" repl-fun-name)) ()
+         "Toggle to the buffer associated with this REPL process; see a log of your submissions.
 
-    (pcase current-prefix-arg
-      ;; 0 ⇒ Jump to repl [TODO: Add a  keybinding for “C-u 0 C-x C-j” to return to original position.]
-      (0 (switch-to-buffer (--> (buffer-list) (--map (buffer-name it) it) (--filter (s-starts-with? "*REPL/jshell" it) it) car)))
-      (-1
+Invoke once to go to the REPL buffer; invoke again to jump back to your original buffer."
+         (interactive)
+         (if (equal (current-buffer) (process-buffer ,repl))
+             (switch-to-buffer (get (quote ,(intern (format "%s/jump-to-process-buffer" repl-fun-name))) 'location))
+           (setf (get (quote ,(intern (format "%s/jump-to-process-buffer" repl-fun-name))) 'location) (current-buffer))
+           (switch-to-buffer (process-buffer ,repl))))
+
        ;; restart repl, [then send to repl --does not work since REPLs take a sec to load. That's OK, not a deal-breaker!]
+       (defun ,(intern (format "%s/restart" repl-fun-name)) ()
+         "Restart the REPL process."
+         (interactive)
          (kill-buffer (process-buffer ,repl))
          ,incantation-to-restart-repl)
-      ;; ('(4)  (insert " " output)) ;; C-u ;; handled when we actually have the output; see the process filter below
-      ('(16) ;; C-u C-u ⇒ documentation lookup
-       (rdd---docs-at-point (quote ,docs)))
-      (_
-       (if (use-region-p)
-           (deactivate-mark)
-         (beginning-of-line)
-         (setq region-beg (point))
-         (end-of-line)
-         (setq region-end (point)))
-       ;; TODO: Need to make this newline deletion a toggle, otherwise I suspect issues with python!
-       (setq rdd---current-input (s-replace-regexp "\n" "" (s-trim-left (buffer-substring-no-properties region-beg region-end))))
-       (process-send-string ,repl rdd---current-input)
-       (process-send-string ,repl "\n")
-       ))
-    )))))
+
+       (defun ,(intern (format "%s/docs-at-point" repl-fun-name)) ()
+         "Documentation at point."
+         (interactive)
+         (rdd---docs-at-point (quote ,docs)))
+
+       (defun ,(intern (format "%s/read" repl-fun-name)) (str)
+         "Read STR into code executable by the REPL.
+
+This is intended to result in executable code, from a possibly prettified string.
+
+The read protocol is the “R” of “REPL”; it is fundamental if you want to insert
+the result of an evaluation into the current buffer, say, for forming tests,
+and so require the inserted text to also be executable.
+
+By default, this method returns the given string as-is.
+
+YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
+(If you care about how inserted code looks.)"
+        (interactive "sRead: ")
+         str)
+
+       (defun ,(intern (format "%s/submit" repl-fun-name)) (str)
+         ,(format "Send STR to the REPL process, followed by a newline.
+
+To submit a region, use `%s'.
+
+This updates `rdd---current-input' to be STR." repl-fun-name)
+         (setq rdd---current-input str)
+         (process-send-string ,repl str)
+         (process-send-string ,repl "\n"))
+
+       ;; TODO: Replace rdd---current-input with a symbolic property 'current-input that lives under symbol 'repl/𝑳𝑨𝑵𝑮.
+       ;; Then make a method (repl/𝑳𝑨𝑵𝑮/current-input &optional new-value) to easily get/set this thing.
+       ;; WHY? So that the current-input is namespaced for distinct repl and not globally shared.
+
+       (bind-key* (s-join " " (mapcar #'pp-to-string ,keys))
+                  (defun ,repl-fun-name (region-beg region-end)
+                    ,(rdd---make-repl-function-docstring cmd "")
+                    (interactive "r")
+
+                    (require 'pulsar)
+                    (setq pulsar-face 'pulsar-yellow)
+                    (pulsar-mode +1)
+                    (pulsar-pulse-line)
+
+                    (pcase current-prefix-arg
+                      (0  (,(intern (format "%s/jump-to-process-buffer" repl-fun-name))))
+                      (-1 (,(intern (format "%s/restart" repl-fun-name))))
+                      ;; ('(4)  (insert " " output)) ;; C-u ;; handled when we actually have the output; see the process filter below
+                      ('(16) ;; C-u C-u ⇒ documentation lookup
+                       (,(intern (format "%s/docs-at-point" repl-fun-name))))
+                      (_
+                       (if (use-region-p)
+                           (deactivate-mark)
+                         (beginning-of-line)
+                         (setq region-beg (point))
+                         (end-of-line)
+                         (setq region-end (point)))
+                       ;; TODO: Need to make this newline deletion a toggle, otherwise I suspect issues with python!
+                       (,(intern (format "%s/submit" repl-fun-name))
+                        (s-replace-regexp "\n" "" (s-trim-left (buffer-substring-no-properties region-beg region-end)))))))))))
 
 (defun rdd---docs-at-point (docs)
   ;; Test this by writing a word such as “IntStream.range(0, 44)” then M-: (rdd---docs-at-point '("openjdk~19"))
@@ -379,19 +429,24 @@
 (cl-defmethod rdd---make-repl-function-docstring ((cli string) (additional-remarks string))
   "Makes the docstring for a repl function working with command CLI."
   (s-replace-regexp "^\s+" ""
-  (format
-   "Executes the selected region, if any or otherwise the entire current line,
+                    (format
+                     "Executes the selected region, if any or otherwise the entire current line,
     and evaluates it with the command-line tool “%s”.
 
     Output is shown as an overlay at the current cursor position.
     It is shown for `repl-driven-development/echo-duration' many seconds.
 
-    ## C-u Prefix: Insert result ###################################################
+    ##### C-u Prefix: Insert result
 
     With a “C-u” prefix, the output is inserted at point
     (and not echoed in an overlay).
 
-    ## C-u C-u Prefix: Documentation ##############################################
+    Since %s may pretty-print its output, inserting it may result in
+    non-executable code. If you want executable code, you must specify
+    how pretty-printed output must be converted into %s-executable code.
+    Do so by redefining `%s'.
+
+    ##### C-u C-u Prefix: Documentation via `%s'
 
     With a “C-u C-u” prefix, documentation is looked-up for the word at point.
 
@@ -399,31 +454,41 @@
     example uses as well. Visit https://devdocs.io/ to see the list of documented
     languages and libraries.
 
-    ## “C-u 0” Prefix: See associated buffer #####################################
+    ##### “C-u 0” Prefix: See associated buffer via `%s'
 
     Sometimes it may be useful to look at a large output in a dedicated buffer.
+    However, the output of a command is also attached to the input via a tooltip:
+    Hover to see it! See also `tooltip-delay'.
 
-    ## “C-u -1” Prefix: Restart REPL #############################################
+    ##### “C-u -1” Prefix: Restart REPL via `%s'
 
     In the event you've messed-up your REPL, starting from a blank slate may be
     helpful.
 
-    ## Implementation Notes ########################################################
+    ##### Implementation Notes
 
     The interactive method is asynchronous: Whenever you send text for evaluation,
     you immediately regain control in Emacs; you may send more text and it will be
     queued for evaluation. For example, evaluating a sleep command for 3 seconds
     does not block Emacs.
 
-    ## See also ####################################################################
+    From Lisp, consider using `%s'.
+
+    ##### See also
 
     See `repl-driven-development' for more useful docs.
 
     See www.alhassy.com/repl-driven-development to learn more about RDD and see
     examples and many gifs.
 "
-   cli
-   )))
+                     cli
+                     cli
+                     cli
+                     (format "repl/%s/read" cli)
+                     (format "repl/%s/docs-at-point" cli)
+                     (format "repl/%s/jump-to-process-buffer" cli)
+                     (format "repl/%s/restart" cli)
+                     (format "repl/%s/submit" cli))))
 
 (defun repl-driven-development--santise-output (output prompt input)
   "Remove PROMPT from OUTPUT, and ensure OUTPUT does not contain a copy of INPUT."
