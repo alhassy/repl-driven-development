@@ -98,6 +98,15 @@
 (defvar rdd---current-output nil
   "The output of the most recent repl call; this is used for testing.")
 
+(defmacro rdd@ (cmd property)
+  "Get/set PROPERTY under namespace CMD.
+
+Usage:
+    (rdd@ \"foo\" name)                ;; ⇒ nil
+    (setf (rdd@ \"foo\" name) 'Jasim)
+    (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
+  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+
 ;;;###autoload
 (cl-defun repl-driven-development (keys cli &key (prompt ">") docs (prologue ""))
   "Make Emacs itself a REPL for your given language of choice.
@@ -227,6 +236,9 @@
       (aset buffer-display-table ?\^M [])
       (setq buffer-read-only t))
 
+    (setf (rdd@ cmd cmd) cmd)
+    (setf (rdd@ cmd prompt) prompt)
+
     (setq docs (rdd---install-any-not-yet-installed-docs docs))
     (eval `(rdd---make-repl-function ,repl ,keys ,cmd ,docs
                                      (repl-driven-development ,keys ,cli :prompt ,prompt :docs ,(s-join " " docs) :prologue ,prologue)))
@@ -235,14 +247,14 @@
     (process-send-string repl "\n")
 
     ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-    (set-process-filter repl (rdd---main-callback cmd prompt))
+    (set-process-filter repl (rdd---main-callback (intern cmd)))
 
     ;; Return the REPL process to the user.
     repl))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun rdd---main-callback (cli prompt)
+(defun rdd---main-callback (repl)
   `(lambda (process output)
 
      ;; The *REPL* buffer shows things exactly as they'd look like
@@ -251,7 +263,7 @@
 
      ;; This is done to provide a richer, friendlier, interaction.
      ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
-     (setq output (s-trim (s-replace-regexp ,prompt "" (s-replace "\r\n" "" output))))
+     (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) "" (s-replace "\r\n" "" output))))
 
      ;; thread `output' through output hooks
      ;; i.e., run all hooks on REPL output, each possibly modifying output
@@ -259,7 +271,7 @@
      (cl-loop for fun in repl-driven-development/output-hook
               do (setq output (funcall fun output)))
 
-     (rdd---insert-or-echo ,cli output)))
+     (rdd---insert-or-echo ,(rdd@ repl cmd) output)))
 
 (defun rdd---install-any-not-yet-installed-docs (docs)
   "Install any not-yet-installed docs; returns a List<String> of the intalled docs."
@@ -300,7 +312,7 @@
        (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
          (eros--make-result-overlay output
            :format  " ⮕ %s"
-           )
+           :duration repl-driven-development/echo-duration))))))
 
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
