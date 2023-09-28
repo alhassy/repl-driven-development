@@ -68,10 +68,15 @@
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
       (eval-buffer)
+      ;; Nearly instantaneous display of tooltips.
+      (setq tooltip-delay 0)
 
       (repl-driven-development [C-x C-j] "node")
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
+      Object.keys({name: "mikle", 1: "one"})
 
+      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>")
+      IntStream.range(0, 23).forEach(x -> System.out.println(x))
       )
 
 (require 's)               ;; “The long lost Emacs string manipulation library”
@@ -281,6 +286,14 @@
      (setq output (rdd---ignore-ansi-color-codes output))
      (unless (s-blank? (s-trim output))
        (setq repl-driven-development-current--output output)
+       ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
+       (unless  (equal output (s-trim rdd---current-input))
+         (save-excursion
+           (goto-char (point-min))
+           (while (re-search-forward (regexp-quote rdd---current-input) nil t)
+             (mapcar #'delete-overlay (overlays-at (match-beginning 0)))
+             (let ((overlay (make-overlay (match-beginning 0) (match-end 0))))
+               (overlay-put overlay 'help-echo output)))))
        (thread-yield)
        (require 'eros)
        (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
