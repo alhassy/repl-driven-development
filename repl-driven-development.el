@@ -71,7 +71,10 @@
       ;; Nearly instantaneous display of tooltips.
       (setq tooltip-delay 0)
 
-      (repl-driven-development [C-x C-j] "node")
+      (repl-driven-development [C-x C-t] "bash")
+      echo "I am from $HOME, my name is $(whoami)"
+
+      (repl-driven-development [C-x C-n] "node")
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
       Object.keys({name: "mikle", 1: "one"})
 
