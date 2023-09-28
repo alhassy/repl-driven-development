@@ -65,6 +65,15 @@
 ;; https://github.com/magnars/dash.el
 ;; https://github.com/magnars/s.el
 
+(when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
+
+      (eval-buffer)
+
+      (repl-driven-development [C-x C-j] "node")
+      [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
+
+      )
+
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
 (require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
@@ -84,9 +93,9 @@
 (defvar rdd---current-output nil
   "The output of the most recent repl call; this is used for testing.")
 
-  ;;;###autoload
+;;;###autoload
 (cl-defun repl-driven-development (keys cli &key (prompt ">") docs (prologue ""))
-    "Make Emacs itself a REPL for your given language of choice.
+  "Make Emacs itself a REPL for your given language of choice.
 
   Suppose you're exploring a Python/Ruby/Java/JS/TS/Haskell/Lisps/etc
   API, or experimenting with an idea and want immediate feedback.
@@ -197,34 +206,34 @@
   VSCode has a similar utility for making in-editor REPLs, by the
   same author: http://alhassy.com/making-vscode-itself-a-java-repl
   "
-    (cl-assert (or (stringp prologue) (listp prologue)))
-    (when (listp prologue) (setq prologue (s-join "\n" prologue)))
-    (cl-assert (stringp prologue))
-    (-let* (((cmd . args) (s-split " " cli))
-            ;; Identifier "repl-driven-development" is made unique
-            ;; by start-process.
-            (repl (apply #'start-process "repl-driven-development"
-                         (format "*REPL/%s*" cli) cmd args)))
+  (cl-assert (or (stringp prologue) (listp prologue)))
+  (when (listp prologue) (setq prologue (s-join "\n" prologue)))
+  (cl-assert (stringp prologue))
+  (-let* (((cmd . args) (s-split " " cli))
+          ;; Identifier "repl-driven-development" is made unique
+          ;; by start-process.
+          (repl (apply #'start-process "repl-driven-development"
+                       (format "*REPL/%s*" cli) cmd args)))
 
-      ;; https://stackoverflow.com/q/4120054
-      ;; (set-process-coding-system repl 'unix)
-      (with-current-buffer  (format "*REPL/%s*" cli)
-        (setq buffer-display-table (make-display-table))
-        (aset buffer-display-table ?\^M [])
-        (setq buffer-read-only t))
+    ;; https://stackoverflow.com/q/4120054
+    ;; (set-process-coding-system repl 'unix)
+    (with-current-buffer  (format "*REPL/%s*" cli)
+      (setq buffer-display-table (make-display-table))
+      (aset buffer-display-table ?\^M [])
+      (setq buffer-read-only t))
 
-     (setq docs (rdd---install-any-not-yet-installed-docs docs))
-     (eval `(rdd---make-repl-function ,repl ,keys ,cmd ,docs
-         (repl-driven-development ,keys ,cli :prompt ,prompt :docs ,(s-join " " docs) :prologue ,prologue)))
+    (setq docs (rdd---install-any-not-yet-installed-docs docs))
+    (eval `(rdd---make-repl-function ,repl ,keys ,cmd ,docs
+                                     (repl-driven-development ,keys ,cli :prompt ,prompt :docs ,(s-join " " docs) :prologue ,prologue)))
 
-     (process-send-string repl prologue)
-     (process-send-string repl "\n")
+    (process-send-string repl prologue)
+    (process-send-string repl "\n")
 
-     ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-     (set-process-filter repl (rdd---main-callback prompt))
+    ;; Callback: Write the actual output to the REPL buffer and emit overlay.
+    (set-process-filter repl (rdd---main-callback prompt))
 
-     ;; Return the REPL process to the user.
-     repl))
+    ;; Return the REPL process to the user.
+    repl))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
