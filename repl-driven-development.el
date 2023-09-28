@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.1
+;; Version: 1.0.2
 ;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "27.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -223,34 +223,39 @@ Usage:
   (cl-assert (or (stringp prologue) (listp prologue)))
   (when (listp prologue) (setq prologue (s-join "\n" prologue)))
   (cl-assert (stringp prologue))
-  (-let* (((cmd . args) (s-split " " cli))
-          ;; Identifier "repl-driven-development" is made unique
-          ;; by start-process.
-          (repl (apply #'start-process "repl-driven-development"
-                       (format "*REPL/%s*" cli) cmd args)))
+  (-let* (((repl . args) (s-split " " cli)))
 
     ;; https://stackoverflow.com/q/4120054
-    ;; (set-process-coding-system repl 'unix)
+    ;; (set-process-coding-system repl-process 'unix)
     (with-current-buffer  (format "*REPL/%s*" cli)
       (setq buffer-display-table (make-display-table))
       (aset buffer-display-table ?\^M [])
       (setq buffer-read-only t))
 
-    (setf (rdd@ cmd cmd) cmd)
-    (setf (rdd@ cmd prompt) prompt)
+    (setf (rdd@ repl cmd) repl)
+    (setf (rdd@ repl prompt) prompt)
+    (setf (rdd@ repl keybinding) keys)
+    (setf (rdd@ repl docs) (s-join " " docs))
+    (setf (rdd@ repl prologue) prologue)
+    ;; Identifier "repl-driven-development" is made unique by start-process.
+    (setf (rdd@ repl process)
+          (apply #'start-process "repl-driven-development"
+                 (format "*REPL/%s*" cli) repl args))
 
     (setq docs (rdd---install-any-not-yet-installed-docs docs))
-    (eval `(rdd---make-repl-function ,repl ,keys ,cmd ,docs
+    (eval `(rdd---make-repl-function (intern repl) ,(rdd@ repl process) ,keys ,repl ,docs
                                      (repl-driven-development ,keys ,cli :prompt ,prompt :docs ,(s-join " " docs) :prologue ,prologue)))
 
-    (process-send-string repl prologue)
-    (process-send-string repl "\n")
+    (process-send-string (rdd@ repl process) prologue)
+    (process-send-string (rdd@ repl process) "\n")
 
     ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-    (set-process-filter repl (rdd---main-callback (intern cmd)))
+    (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
 
     ;; Return the REPL process to the user.
-    repl))
+    (rdd@ repl process)))
+
+;; TODO. (use-package erefactor)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -317,8 +322,8 @@ Usage:
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 ;; (fmakunbound #'repl-driven-development--make-repl-function)
-(defmacro rdd---make-repl-function (repl keys cmd docs incantation-to-restart-repl)
-  ;; cl-defmethod repl-driven-development--make-repl-function ((repl process) (cli string) (repl-fun-name string) (docs list))
+(defmacro rdd---make-repl-function (repl repl-process keys cmd docs incantation-to-restart-repl)
+  ;; cl-defmethod repl-driven-development--make-repl-function ((repl-process process) (cli string) (repl-fun-name string) (docs list))
   "Constructs code denoting a function that sends a region to a REPL process"
   (-let* ((repl-fun-name (intern (concat "repl/" cmd))))
     `(progn
@@ -328,7 +333,7 @@ Usage:
          (thread-join (make-thread `(lambda ()
                                       (setq DONE (format "\"DONE TEST %s\"" (gensym)))
                                       ;; (process-send-string jshell (format "Thread.sleep(3000)\n1 + 9\n%s\n" DONE))
-                                      (process-send-string ,,repl (format "%s\n%s\n" ,string DONE))
+                                      (process-send-string ,,repl-process (format "%s\n%s\n" ,string DONE))
                                       (setq my/threshold 0)
                                       (setq results nil)
                                       (setq waiting-seconds .5) ;; half a second
@@ -351,16 +356,16 @@ Usage:
 
 Invoke once to go to the REPL buffer; invoke again to jump back to your original buffer."
          (interactive)
-         (if (equal (current-buffer) (process-buffer ,repl))
+         (if (equal (current-buffer) (process-buffer ,repl-process))
              (switch-to-buffer (get (quote ,(intern (format "%s/jump-to-process-buffer" repl-fun-name))) 'location))
            (setf (get (quote ,(intern (format "%s/jump-to-process-buffer" repl-fun-name))) 'location) (current-buffer))
-           (switch-to-buffer (process-buffer ,repl))))
+           (switch-to-buffer (process-buffer ,repl-process))))
 
        ;; restart repl, [then send to repl --does not work since REPLs take a sec to load. That's OK, not a deal-breaker!]
        (defun ,(intern (format "%s/restart" repl-fun-name)) ()
          "Restart the REPL process."
          (interactive)
-         (kill-buffer (process-buffer ,repl))
+         (kill-buffer (process-buffer ,repl-process))
          ,incantation-to-restart-repl)
 
        (defun ,(intern (format "%s/docs-at-point" repl-fun-name)) ()
@@ -381,7 +386,7 @@ By default, this method returns the given string as-is.
 
 YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
 (If you care about how inserted code looks.)"
-        (interactive "sRead: ")
+         (interactive "sRead: ")
          str)
 
        (defun ,(intern (format "%s/submit" repl-fun-name)) (str)
@@ -391,8 +396,8 @@ To submit a region, use `%s'.
 
 This updates `rdd---current-input' to be STR." repl-fun-name)
          (setq rdd---current-input str)
-         (process-send-string ,repl str)
-         (process-send-string ,repl "\n"))
+         (process-send-string ,repl-process str)
+         (process-send-string ,repl-process "\n"))
 
        ;; TODO: Replace rdd---current-input with a symbolic property 'current-input that lives under symbol 'repl/𝑳𝑨𝑵𝑮.
        ;; Then make a method (repl/𝑳𝑨𝑵𝑮/current-input &optional new-value) to easily get/set this thing.
