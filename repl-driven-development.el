@@ -86,7 +86,8 @@
       (setf (rdd@ "node" blink) 'pulsar-green)
       Object.keys({name: "mikle", 1: "one"})
 
-      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>") ;; default yellow
+      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>")
+      ;; default yellow
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
 
       )
@@ -288,7 +289,7 @@ Usage:
      (cl-loop for fun in repl-driven-development/output-hook
               do (setq output (funcall fun output)))
 
-     (rdd---insert-or-echo ,(rdd@ repl cmd) output)))
+     (rdd---insert-or-echo (quote ,repl) output)))
 
 (defun rdd---install-any-not-yet-installed-docs (docs)
   "Install any not-yet-installed docs; returns a List<String> of the intalled docs."
@@ -301,12 +302,12 @@ Usage:
       (--map (unless (member it installed) (devdocs-install (list (cons 'slug it)))) docs))
     docs))
 
-(defun rdd---insert-or-echo (cli output)
+(defun rdd---insert-or-echo (repl output)
   "If there's a C-u, then insert the output; else echo it in overlay"
   (cl-assert (stringp output))
   (pcase current-prefix-arg
     ('(4) (unless (equal output (s-trim rdd---current-input))
-            (insert " " (funcall (intern (format "repl/%s/read" cli)) output)))) ;; (funcall (intern "repl/node/read") "hola")
+            (insert " " (funcall (intern (format "repl/%s/read" (rdd@ repl cmd))) output)))) ;; (funcall (intern "repl/node/read") "hola")
     ;; All other prefixes are handled by repl-fun-name, above.
     (_
      ;; Show output as an overlay at the current cursor position
