@@ -71,23 +71,25 @@
       ;; Nearly instantaneous display of tooltips.
       (setq tooltip-delay 0)
 
-      (repl-driven-development [C-x C-t] "bash")
-      echo "I am from $HOME, my name is $(whoami)"
+      (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
+      echo "I am from $HOME, my name is $(whoami) and I have: \n $(ls)"
 
-      (repl-driven-development [C-x C-n] "node")
+      (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
+      ;; Change colour with C-x C-e, then C-x C-n on the line after.
+      (setf (rdd@ "node" blink) 'pulsar-green)
       Object.keys({name: "mikle", 1: "one"})
 
-      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>")
+      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>") ;; default yellow
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
+
       )
 
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
 (require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
 (require 'eros)            ;; Simple Emacs Overlays
-(require 'org)
-(require 'bind-key)
+(require 'bind-key)        ;; Bind keys
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
@@ -111,7 +113,7 @@ Usage:
   `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
 ;;;###autoload
-(cl-defun repl-driven-development (keys cli &key (prompt ">") docs (prologue ""))
+(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (prologue "") (blink ''pulsar-yellow))
   "Make Emacs itself a REPL for your given language of choice.
 
   Suppose you're exploring a Python/Ruby/Java/JS/TS/Haskell/Lisps/etc
@@ -217,6 +219,9 @@ Usage:
     is probably something you'd always like to have on-hand; or perhaps
     some useful variables/declarations/functions.
 
+  - BLINK [Face]: Any face with a background. It is used to briefly highlight
+    the current line that is being sent to the REPL process.
+
   Finally, you may register callbacks via `repl-driven-development-output-hook'.
 
   ### Misc Remarks #####################################################
@@ -226,37 +231,37 @@ Usage:
   (cl-assert (or (stringp prologue) (listp prologue)))
   (when (listp prologue) (setq prologue (s-join "\n" prologue)))
   (cl-assert (stringp prologue))
-  (-let* (((repl . args) (s-split " " cli)))
+  `(-let* (((repl . args) (s-split " " ,cli)))
+     (setf (rdd@ repl cmd) repl)
+     (setf (rdd@ repl prompt) ,prompt)
+     (setf (rdd@ repl keybinding) ,keys)
+     (setf (rdd@ repl docs) (s-join " " ,docs))
+     (setf (rdd@ repl prologue) ,prologue)
+     (setf (rdd@ repl blink) ,blink)
+     ;; Identifier "repl-driven-development" is made unique by start-process.
+     (setf (rdd@ repl process)
+           (apply #'start-process "repl-driven-development"
+                  (format "*REPL/%s*" ,cli) repl args))
+     ;; https://stackoverflow.com/q/4120054
+     ;; (set-process-coding-system repl-process 'unix)
+     (with-current-buffer  (format "*REPL/%s*" ,cli)
+       (setq buffer-display-table (make-display-table))
+       (aset buffer-display-table ?\^M [])
+       (setq buffer-read-only t))
 
-    ;; https://stackoverflow.com/q/4120054
-    ;; (set-process-coding-system repl-process 'unix)
-    (with-current-buffer  (format "*REPL/%s*" cli)
-      (setq buffer-display-table (make-display-table))
-      (aset buffer-display-table ?\^M [])
-      (setq buffer-read-only t))
+     (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
+     (eval (rdd---make-repl-function repl (rdd@ repl process) ,keys repl ,docs
+                                     nil ;; TODO: (repl-driven-development keys cli :prompt prompt :docs (s-join " " docs) :prologue prologue))
+                                     ))
 
-    (setf (rdd@ repl cmd) repl)
-    (setf (rdd@ repl prompt) prompt)
-    (setf (rdd@ repl keybinding) keys)
-    (setf (rdd@ repl docs) (s-join " " docs))
-    (setf (rdd@ repl prologue) prologue)
-    ;; Identifier "repl-driven-development" is made unique by start-process.
-    (setf (rdd@ repl process)
-          (apply #'start-process "repl-driven-development"
-                 (format "*REPL/%s*" cli) repl args))
+     (process-send-string (rdd@ repl process) ,prologue)
+     (process-send-string (rdd@ repl process) "\n")
 
-    (setq docs (rdd---install-any-not-yet-installed-docs docs))
-    (eval `(rdd---make-repl-function (intern repl) ,(rdd@ repl process) ,keys ,repl ,docs
-                                     (repl-driven-development ,keys ,cli :prompt ,prompt :docs ,(s-join " " docs) :prologue ,prologue)))
+     ;; Callback: Write the actual output to the REPL buffer and emit overlay.
+     (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
 
-    (process-send-string (rdd@ repl process) prologue)
-    (process-send-string (rdd@ repl process) "\n")
-
-    ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-    (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
-
-    ;; Return the REPL process to the user.
-    (rdd@ repl process)))
+     ;; Return the REPL process to the user.
+     (rdd@ repl process)))
 
 ;; TODO. (use-package erefactor)
 
@@ -325,9 +330,10 @@ Usage:
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 ;; (fmakunbound #'repl-driven-development--make-repl-function)
-(defmacro rdd---make-repl-function (repl repl-process keys cmd docs incantation-to-restart-repl)
+(defun rdd---make-repl-function (repl repl-process keys cmd docs incantation-to-restart-repl)
   ;; cl-defmethod repl-driven-development--make-repl-function ((repl-process process) (cli string) (repl-fun-name string) (docs list))
   "Constructs code denoting a function that sends a region to a REPL process"
+
   (-let* ((repl-fun-name (intern (concat "repl/" cmd))))
     `(progn
        ;; TODO: Consider deleting this and setting the callback for repl testing directly a la set-process-filter.
@@ -412,9 +418,9 @@ This updates `rdd---current-input' to be STR." repl-fun-name)
                     (interactive "r")
 
                     (require 'pulsar)
-                    (setq pulsar-face 'pulsar-yellow)
-                    (pulsar-mode +1)
-                    (pulsar-pulse-line)
+                    (-let [pulsar-face (rdd@ ,repl blink)]
+                      (pulsar-mode +1)
+                      (pulsar-pulse-line))
 
                     (pcase current-prefix-arg
                       (0  (,(intern (format "%s/jump-to-process-buffer" repl-fun-name))))
