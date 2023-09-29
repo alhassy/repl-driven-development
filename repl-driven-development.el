@@ -106,9 +106,6 @@
 (defvar rdd---current-input nil
   "Used to avoid scenarios where input is echoed thereby accidentally treating it as a repl output.")
 
-(defvar rdd---current-output nil
-  "The output of the most recent repl call; this is used for testing.")
-
 (defmacro rdd@ (cmd property)
   "Get/set PROPERTY under namespace CMD.
 
