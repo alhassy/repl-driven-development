@@ -250,7 +250,7 @@ Usage:
        (setq buffer-read-only t))
 
      (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
-     (eval (rdd---make-repl-function repl ,keys repl ,docs
+     (eval (rdd---make-repl-function repl repl ,docs
                                      nil ;; TODO: (repl-driven-development keys cli :prompt prompt :docs (s-join " " docs) :prologue prologue))
                                      ))
 
@@ -330,7 +330,7 @@ Usage:
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 ;; (fmakunbound #'repl-driven-development--make-repl-function)
-(defun rdd---make-repl-function (repl keys cmd docs incantation-to-restart-repl)
+(defun rdd---make-repl-function (repl cmd docs incantation-to-restart-repl)
   ;; cl-defmethod repl-driven-development--make-repl-function ((repl-process process) (cli string) (repl-fun-name string) (docs list))
   "Constructs code denoting a function that sends a region to a REPL process"
 
@@ -412,7 +412,7 @@ This updates `rdd---current-input' to be STR." repl-fun-name)
        ;; Then make a method (repl/𝑳𝑨𝑵𝑮/current-input &optional new-value) to easily get/set this thing.
        ;; WHY? So that the current-input is namespaced for distinct repl and not globally shared.
 
-       (bind-key* (s-join " " (mapcar #'pp-to-string ,keys))
+       (bind-key* (s-join " " (mapcar #'pp-to-string (rdd@ ,repl keybinding)))
                   (defun ,repl-fun-name (region-beg region-end)
                     ,(rdd---make-repl-function-docstring cmd "")
                     (interactive "r")
