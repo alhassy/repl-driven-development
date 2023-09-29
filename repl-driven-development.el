@@ -232,10 +232,12 @@ Usage:
   (when (listp prologue) (setq prologue (s-join "\n" prologue)))
   (cl-assert (stringp prologue))
   `(-let* (((repl . args) (s-split " " ,cli)))
-     (setf (rdd@ repl cmd) repl)
-     (setf (rdd@ repl prompt) ,prompt)
-     (setf (rdd@ repl keybinding) ,keys)
-     (setf (rdd@ repl docs) (s-join " " ,docs))
+
+     ;; (repl-fun-name string)
+     (setf (rdd@ repl cmd) repl) ;; String
+     (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
+     (setf (rdd@ repl keybinding) ,keys) ;; String
+     (setf (rdd@ repl docs) (s-join " " ,docs)) ;; String: Space separated list
      (setf (rdd@ repl prologue) ,prologue)
      (setf (rdd@ repl blink) ,blink)
      ;; Identifier "repl-driven-development" is made unique by start-process.
@@ -250,7 +252,7 @@ Usage:
        (setq buffer-read-only t))
 
      (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
-     (eval (rdd---make-repl-function repl ,docs
+     (eval (rdd---make-repl-function repl
                                      nil ;; TODO: (repl-driven-development keys cli :prompt prompt :docs (s-join " " docs) :prologue prologue))
                                      ))
 
@@ -330,8 +332,7 @@ Usage:
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 ;; (fmakunbound #'repl-driven-development--make-repl-function)
-(defun rdd---make-repl-function (repl docs incantation-to-restart-repl)
-  ;; cl-defmethod repl-driven-development--make-repl-function ((repl-process process) (cli string) (repl-fun-name string) (docs list))
+(defun rdd---make-repl-function (repl incantation-to-restart-repl)
   "Constructs code denoting a function that sends a region to a REPL process"
 
   (-let* ((repl-fun-name (intern (concat "repl/" (rdd@ repl cmd)))))
@@ -380,7 +381,7 @@ Invoke once to go to the REPL buffer; invoke again to jump back to your original
        (defun ,(intern (format "%s/docs-at-point" repl-fun-name)) ()
          "Documentation at point."
          (interactive)
-         (rdd---docs-at-point (quote ,docs)))
+         (rdd---docs-at-point (quote ,(rdd@ repl docs))))
 
        (defun ,(intern (format "%s/read" repl-fun-name)) (str)
          "Read STR into code executable by the REPL.
