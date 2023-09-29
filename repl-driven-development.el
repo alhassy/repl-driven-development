@@ -250,7 +250,7 @@ Usage:
        (setq buffer-read-only t))
 
      (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
-     (eval (rdd---make-repl-function repl (rdd@ repl process) ,keys repl ,docs
+     (eval (rdd---make-repl-function repl ,keys repl ,docs
                                      nil ;; TODO: (repl-driven-development keys cli :prompt prompt :docs (s-join " " docs) :prologue prologue))
                                      ))
 
@@ -330,7 +330,7 @@ Usage:
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 ;; (fmakunbound #'repl-driven-development--make-repl-function)
-(defun rdd---make-repl-function (repl repl-process keys cmd docs incantation-to-restart-repl)
+(defun rdd---make-repl-function (repl keys cmd docs incantation-to-restart-repl)
   ;; cl-defmethod repl-driven-development--make-repl-function ((repl-process process) (cli string) (repl-fun-name string) (docs list))
   "Constructs code denoting a function that sends a region to a REPL process"
 
@@ -342,7 +342,7 @@ Usage:
          (thread-join (make-thread `(lambda ()
                                       (setq DONE (format "\"DONE TEST %s\"" (gensym)))
                                       ;; (process-send-string jshell (format "Thread.sleep(3000)\n1 + 9\n%s\n" DONE))
-                                      (process-send-string ,,repl-process (format "%s\n%s\n" ,string DONE))
+                                      (process-send-string (rdd@ ,,repl process) (format "%s\n%s\n" ,string DONE))
                                       (setq my/threshold 0)
                                       (setq results nil)
                                       (setq waiting-seconds .5) ;; half a second
@@ -365,16 +365,16 @@ Usage:
 
 Invoke once to go to the REPL buffer; invoke again to jump back to your original buffer."
          (interactive)
-         (if (equal (current-buffer) (process-buffer ,repl-process))
+         (if (equal (current-buffer) (process-buffer (rdd@ ,repl process)))
              (switch-to-buffer (get (quote ,(intern (format "%s/jump-to-process-buffer" repl-fun-name))) 'location))
            (setf (get (quote ,(intern (format "%s/jump-to-process-buffer" repl-fun-name))) 'location) (current-buffer))
-           (switch-to-buffer (process-buffer ,repl-process))))
+           (switch-to-buffer (process-buffer (rdd@ ,repl process)))))
 
        ;; restart repl, [then send to repl --does not work since REPLs take a sec to load. That's OK, not a deal-breaker!]
        (defun ,(intern (format "%s/restart" repl-fun-name)) ()
          "Restart the REPL process."
          (interactive)
-         (kill-buffer (process-buffer ,repl-process))
+         (kill-buffer (process-buffer (@rdd ,repl process)))
          ,incantation-to-restart-repl)
 
        (defun ,(intern (format "%s/docs-at-point" repl-fun-name)) ()
@@ -405,8 +405,8 @@ To submit a region, use `%s'.
 
 This updates `rdd---current-input' to be STR." repl-fun-name)
          (setq rdd---current-input str)
-         (process-send-string ,repl-process str)
-         (process-send-string ,repl-process "\n"))
+         (process-send-string (rdd@ ,repl process) str)
+         (process-send-string (rdd@ ,repl process) "\n"))
 
        ;; TODO: Replace rdd---current-input with a symbolic property 'current-input that lives under symbol 'repl/𝑳𝑨𝑵𝑮.
        ;; Then make a method (repl/𝑳𝑨𝑵𝑮/current-input &optional new-value) to easily get/set this thing.
