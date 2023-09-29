@@ -250,7 +250,7 @@ Usage:
        (setq buffer-read-only t))
 
      (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
-     (eval (rdd---make-repl-function repl repl ,docs
+     (eval (rdd---make-repl-function repl ,docs
                                      nil ;; TODO: (repl-driven-development keys cli :prompt prompt :docs (s-join " " docs) :prologue prologue))
                                      ))
 
@@ -330,11 +330,11 @@ Usage:
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 ;; (fmakunbound #'repl-driven-development--make-repl-function)
-(defun rdd---make-repl-function (repl cmd docs incantation-to-restart-repl)
+(defun rdd---make-repl-function (repl docs incantation-to-restart-repl)
   ;; cl-defmethod repl-driven-development--make-repl-function ((repl-process process) (cli string) (repl-fun-name string) (docs list))
   "Constructs code denoting a function that sends a region to a REPL process"
 
-  (-let* ((repl-fun-name (intern (concat "repl/" cmd))))
+  (-let* ((repl-fun-name (intern (concat "repl/" (rdd@ repl cmd)))))
     `(progn
        ;; TODO: Consider deleting this and setting the callback for repl testing directly a la set-process-filter.
        (defun ,(intern (format "%s/sync" repl-fun-name)) (string)
@@ -414,7 +414,7 @@ This updates `rdd---current-input' to be STR." repl-fun-name)
 
        (bind-key* (s-join " " (mapcar #'pp-to-string (rdd@ ,repl keybinding)))
                   (defun ,repl-fun-name (region-beg region-end)
-                    ,(rdd---make-repl-function-docstring cmd "")
+                    ,(rdd---make-repl-function-docstring (rdd@ repl cmd) "")
                     (interactive "r")
 
                     (require 'pulsar)
