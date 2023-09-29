@@ -73,6 +73,12 @@
 
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
       echo "I am from $HOME, my name is $(whoami) and I have: \n $(ls)"
+      ;; We can also restart the repl... let's set some state
+      export X=123
+      echo $X
+      ;; Now restart it with C-u -1 C-x C-t
+      echo $X
+      ;; C-x C-t on the above line emits no value
 
       (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
@@ -228,17 +234,18 @@ Usage:
   VSCode has a similar utility for making in-editor REPLs, by the
   same author: http://alhassy.com/making-vscode-itself-a-java-repl
   "
-  (cl-assert (or (stringp prologue) (listp prologue)))
-  (when (listp prologue) (setq prologue (s-join "\n" prologue)))
-  (cl-assert (stringp prologue))
   `(-let* (((repl . args) (s-split " " ,cli)))
-
      ;; (repl-fun-name string)
      (setf (rdd@ repl cmd) repl) ;; String
      (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
      (setf (rdd@ repl keybinding) ,keys) ;; String
      (setf (rdd@ repl docs) (s-join " " ,docs)) ;; String: Space separated list
+
      (setf (rdd@ repl prologue) ,prologue)
+     (cl-assert (or (stringp ,prologue) (listp ,prologue)))
+     (when (listp ,prologue) (setq ,prologue (s-join "\n" ,prologue)))
+     (cl-assert (stringp ,prologue))
+
      (setf (rdd@ repl blink) ,blink)
      ;; Identifier "repl-driven-development" is made unique by start-process.
      (setf (rdd@ repl process)
@@ -252,9 +259,7 @@ Usage:
        (setq buffer-read-only t))
 
      (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
-     (eval (rdd---make-repl-function repl
-                                     nil ;; TODO: (repl-driven-development keys cli :prompt prompt :docs (s-join " " docs) :prologue prologue))
-                                     ))
+     (eval (rdd---make-repl-function repl))
 
      (process-send-string (rdd@ repl process) ,prologue)
      (process-send-string (rdd@ repl process) "\n")
@@ -331,8 +336,7 @@ Usage:
 
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
-;; (fmakunbound #'repl-driven-development--make-repl-function)
-(defun rdd---make-repl-function (repl incantation-to-restart-repl)
+(defun rdd---make-repl-function (repl)
   "Constructs code denoting a function that sends a region to a REPL process"
 
   (-let* ((repl-fun-name (intern (concat "repl/" (rdd@ repl cmd)))))
@@ -375,8 +379,13 @@ Invoke once to go to the REPL buffer; invoke again to jump back to your original
        (defun ,(intern (format "%s/restart" repl-fun-name)) ()
          "Restart the REPL process."
          (interactive)
-         (kill-buffer (process-buffer (@rdd ,repl process)))
-         ,incantation-to-restart-repl)
+         (kill-buffer (process-buffer (rdd@ ,repl process)))
+         (repl-driven-development (rdd@ ,repl keybinding)
+                                  (rdd@ ,repl cmd)
+                                  :prompt (rdd@ ,repl prompt)
+                                  :docs (rdd@ ,repl docs)
+                                  :prologue (rdd@ ,repl prologue)
+                                  :blink (rdd@ ,repl blink)))
 
        (defun ,(intern (format "%s/docs-at-point" repl-fun-name)) ()
          "Documentation at point."
