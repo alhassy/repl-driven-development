@@ -270,30 +270,30 @@ Usage:
      ;; Return the REPL process to the user.
      (rdd@ repl process)))
 
-  ;; TODO. (use-package erefactor)
+;; TODO. (use-package erefactor)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (defun rdd---main-callback (repl)
-    `(lambda (process output)
+(defun rdd---main-callback (repl)
+  `(lambda (process output)
 
-       ;; The *REPL* buffer shows things exactly as they'd look like
-       ;; in a standard interaction in the terminal.
-       (rdd---insertion-filter process output)
+     ;; The *REPL* buffer shows things exactly as they'd look like
+     ;; in a standard interaction in the terminal.
+     (rdd---insertion-filter process output)
 
-       ;; This is done to provide a richer, friendlier, interaction.
-       ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
-       (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) "" (s-replace "\r\n" "" output))))
+     ;; This is done to provide a richer, friendlier, interaction.
+     ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
+     (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) "" (s-replace "\r\n" "" output))))
 
-       ;; thread `output' through output hooks
-       ;; i.e., run all hooks on REPL output, each possibly modifying output
-       (require 'cl)
-       (cl-loop for fun in repl-driven-development/output-hook
-                do (setq output (funcall fun output)))
+     ;; thread `output' through output hooks
+     ;; i.e., run all hooks on REPL output, each possibly modifying output
+     (require 'cl)
+     (cl-loop for fun in repl-driven-development/output-hook
+              do (setq output (funcall fun output)))
 
-       (rdd---insert-or-echo (quote ,repl) output)))
+     (rdd---insert-or-echo (quote ,repl) output)))
 
-  (defun rdd---install-any-not-yet-installed-docs (docs)
+(defun rdd---install-any-not-yet-installed-docs (docs)
   "Install any not-yet-installed docs; returns a List<String> of the intalled docs."
   (when docs
     (require 'devdocs)
@@ -302,37 +302,36 @@ Usage:
     (cl-assert (listp docs))
     (-let [installed (mapcar #'f-base (f-entries devdocs-data-dir))]
       (--map (unless (member it installed) (devdocs-install (list (cons 'slug it)))) docs))
-    docs))
-    )
+    docs)
 
-    (defun rdd---insert-or-echo (repl output)
-      "If there's a C-u, then insert the output; else echo it in overlay"
-      (cl-assert (stringp output))
-      (pcase current-prefix-arg
-        ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
-                (insert " " (funcall (intern (format "repl/%s/read" (rdd@ repl cmd))) output)))) ;; (funcall (intern "repl/node/read") "hola")
-        ;; All other prefixes are handled by repl-fun-name, above.
-        (_
-         ;; Show output as an overlay at the current cursor position
-         ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
-         ;; it does some sexp look-about, which may not mix well with, say, JS
-         ;; arrow functions, so we freeze such movements, locally. ﴿
-         (setq output (rdd---ignore-ansi-color-codes output))
-         (unless (s-blank? (s-trim output))
-           (setq repl-driven-development-current--output output)
-           ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
-           (unless  (equal output (s-trim (rdd@ repl current-input)))
-             ;; MA: Not sure why, but the following line cause the top-most rdd call to stall.
-             ;; To avoid the stall, I use a -let.
-             (mapcar #'delete-overlay (overlays-at (rdd@ repl current-input/start)))
-             (let ((overlay (make-overlay (rdd@ repl current-input/start) (rdd@ repl current-input/end))))
-               (overlay-put overlay 'help-echo output))))
-         (thread-yield)
-         (require 'eros)
-         (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
-           (eros--make-result-overlay output
-             :format  " ⮕ %s"
-             :duration repl-driven-development/echo-duration))))))
+  (defun rdd---insert-or-echo (repl output)
+    "If there's a C-u, then insert the output; else echo it in overlay"
+    (cl-assert (stringp output))
+    (pcase current-prefix-arg
+      ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
+              (insert " " (funcall (intern (format "repl/%s/read" (rdd@ repl cmd))) output)))) ;; (funcall (intern "repl/node/read") "hola")
+      ;; All other prefixes are handled by repl-fun-name, above.
+      (_
+       ;; Show output as an overlay at the current cursor position
+       ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
+       ;; it does some sexp look-about, which may not mix well with, say, JS
+       ;; arrow functions, so we freeze such movements, locally. ﴿
+       (setq output (rdd---ignore-ansi-color-codes output))
+       (unless (s-blank? (s-trim output))
+         (setq repl-driven-development-current--output output)
+         ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
+         (unless  (equal output (s-trim (rdd@ repl current-input)))
+           ;; MA: Not sure why, but the following line cause the top-most rdd call to stall.
+           ;; To avoid the stall, I use a -let.
+           (mapcar #'delete-overlay (overlays-at (rdd@ repl current-input/start)))
+           (let ((overlay (make-overlay (rdd@ repl current-input/start) (rdd@ repl current-input/end))))
+             (overlay-put overlay 'help-echo output))))
+       (thread-yield)
+       (require 'eros)
+       (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
+         (eros--make-result-overlay output
+           :format  " ⮕ %s"
+           :duration repl-driven-development/echo-duration))))))
 
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
