@@ -318,7 +318,6 @@ Usage:
        ;; arrow functions, so we freeze such movements, locally. ﴿
        (setq output (rdd---ignore-ansi-color-codes output))
        (unless (s-blank? (s-trim output))
-         (setq repl-driven-development-current--output output)
          ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
          (unless  (equal output (s-trim (rdd@ repl current-input)))
            ;; MA: Not sure why, but the following line cause the top-most rdd call to stall.
@@ -340,25 +339,7 @@ Usage:
 
   (-let* ((repl-fun-name (intern (concat "repl/" (rdd@ repl cmd)))))
     `(progn
-       ;; TODO: Consider deleting this and setting the callback for repl testing directly a la set-process-filter.
-       (defun ,(intern (format "%s/sync" repl-fun-name)) (string)
-         "Block until we see the snetiantial marker; then emit the repl output. This is an sync call to the repl."
-         (thread-join (make-thread `(lambda ()
-                                      (setq DONE (format "\"DONE TEST %s\"" (gensym)))
-                                      ;; (process-send-string jshell (format "Thread.sleep(3000)\n1 + 9\n%s\n" DONE))
-                                      (process-send-string (rdd@ ,,repl process) (format "%s\n%s\n" ,string DONE))
-                                      (setq my/threshold 0)
-                                      (setq results nil)
-                                      (setq waiting-seconds .5) ;; half a second
-                                      (loop
-                                       (sleep-for .01)
-                                       (incf my/threshold)
-                                       (push repl-driven-development-current--output results)
-                                       (when (or (< 1000 (* my/threshold waiting-seconds)) (s-matches? DONE repl-driven-development-current--output))
-                                         (return)))
-                                      (thread-yield)
-                                      (cadr (-uniq results))))))
-
+       ;; TODO: Make a defun with a callback for repl testing a la set-process-filter.
        ;; (format "%s/jump-to-process-buffer" repl-fun-name)
        ;; (format "%s/restart" repl-fun-name)
        ;; (format "%s/docs-at-point" repl-fun-name)
