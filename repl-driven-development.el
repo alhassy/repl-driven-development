@@ -96,14 +96,14 @@
 
       ;; Notice associated buffer's name involves only the command "jshell", not the args.
       ;; See it via C-u 0 C-x C-j.
-      (repl-driven-development [C-x C-j] "jshell --feedback normal" :prompt "jshell>")
-      ;; default yellow
+      (repl-driven-development [C-x C-j] java)
       ;; FIXME/Minor: I need to select a line before and after the following for it to work as expected:
       ;; ie to show the output overlay where I want it.
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
 
       ;; FIXME: For some reason in Emacs shells, input at the python3 repl is duplicated.
-      (repl-driven-development [C-x C-p] "python3" :prompt ">>>")
+      ;; Easy hack: Chop current input from the supposed output.
+      (repl-driven-development [C-x C-p] python)
       (1 + 2)
 
       )
@@ -127,7 +127,7 @@
       (rdd@ \"foo\" name)                ;; ⇒ nil
       (setf (rdd@ \"foo\" name) 'Jasim)
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
-      `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
 ;;;###autoload
 (cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow))
@@ -245,7 +245,13 @@
   VSCode has a similar utility for making in-editor REPLs, by the
   same author: http://alhassy.com/making-vscode-itself-a-java-repl
   "
-  `(-let* (((repl . args) (s-split " " ,cli)))
+
+  ;; TODO: Document that `cli` can be the unquoted symbols: java, python, terminal
+  (pcase cli
+    ('java `(repl-driven-development     ,keys "jshell"  :prompt "jshell>"))
+    ('terminal `(repl-driven-development ,keys "bash"    :prompt "^[^ ]*\\$"))
+    ('python `(repl-driven-development   ,keys "python3" :prompt ">>>"))
+    (t `(-let* (((repl . args) (s-split " " ,cli)))
      ;; (repl-fun-name string)
      (setf (rdd@ repl cmd) repl) ;; String
      (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
@@ -283,7 +289,7 @@
      (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
 
      ;; Return the REPL process to the user.
-     (rdd@ repl process)))
+     (rdd@ repl process)))))
 
 ;; TODO. (use-package erefactor)
 
