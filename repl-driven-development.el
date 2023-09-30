@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.2
+;; Version: 1.0.3
 ;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "27.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -83,20 +83,28 @@
       ;; Init code works upon initialisation, neato!
       (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)")
 
+      ;; We can get rid of the prompt at the end with
+      (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)" :prompt "^[^ ]*\\$")
+
       (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
       ;; Change colour with C-x C-e, then C-x C-n on the line after.
       (setf (rdd@ "node" blink) 'pulsar-green)
       Object.keys({name: "mikle", 1: "one"})
 
-      ;; TODO: Improve default prompt-rx to account for name.*>|$
+      ;; FIXME: Multi-line input is busted for JS/Java. ;; TODO: s-replace-regexp "\n" ""
 
       ;; Notice associated buffer's name involves only the command "jshell", not the args.
       ;; See it via C-u 0 C-x C-j.
       (repl-driven-development [C-x C-j] "jshell --feedback normal" :prompt "jshell>")
       ;; default yellow
-      ;; FIXME: I need to select a line before and after the following for it to work as expected.
+      ;; FIXME/Minor: I need to select a line before and after the following for it to work as expected:
+      ;; ie to show the output overlay where I want it.
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
+
+      ;; FIXME: For some reason in Emacs shells, input at the python3 repl is duplicated.
+      (repl-driven-development [C-x C-p] "python3" :prompt ">>>")
+      (1 + 2)
 
       )
 
@@ -115,11 +123,11 @@
 (defmacro rdd@ (cmd property)
   "Get/set PROPERTY under namespace CMD.
 
-Usage:
-    (rdd@ \"foo\" name)                ;; ⇒ nil
-    (setf (rdd@ \"foo\" name) 'Jasim)
-    (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
-  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+      Usage:
+      (rdd@ \"foo\" name)                ;; ⇒ nil
+      (setf (rdd@ \"foo\" name) 'Jasim)
+      (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
+      `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
 ;;;###autoload
 (cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow))
@@ -434,7 +442,8 @@ To submit a region, use `%s'." repl-fun-name)
                        (setf (rdd@ ,repl current-input/end) region-end)
                        ;; TODO: Need to make this newline deletion a toggle, otherwise I suspect issues with python!
                        (,(intern (format "%s/submit" repl-fun-name))
-                        (s-replace-regexp "\n" "" (s-trim-left (buffer-substring-no-properties region-beg region-end)))))))))))
+                        ;; TODO: s-replace-regexp "\n" ""
+                        (s-trim-left (buffer-substring-no-properties region-beg region-end))))))))))
 
 (defun rdd---docs-at-point (docs)
   ;; Test this by writing a word such as “IntStream.range(0, 44)” then M-: (rdd---docs-at-point '("openjdk~19"))
