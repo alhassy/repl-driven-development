@@ -101,9 +101,18 @@
       ;; ie to show the output overlay where I want it.
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
 
+      ;; JShell does semicolon insertion eagerly, so it things the following are three separate
+      ;; expressions! We can fix this by removing new lines.
+      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>" :input-rewrite-fn (lambda (in) (s-replace-regexp "\n" "" in)))
+      ;; Select the following three lines, then submit this region with C-x C-j
+      IntStream
+      .range(0, 23)
+      .forEach(x -> System.out.println(x))
+
       ;; FIXME: For some reason in Emacs shells, input at the python3 repl is duplicated.
       ;; Easy hack: Chop current input from the supposed output.
-      (repl-driven-development [C-x C-p] python)
+      ;; FIXME: (repl-driven-development [C-x C-p] python)
+      ;; (repl-driven-development  [C-x C-p] "python3" :prompt ">>>" :input-rewrite-fn (lambda (in) (message-box in)))
       (1 + 2)
 
       )
@@ -130,7 +139,7 @@
   `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
 ;;;###autoload
-(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow))
+(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow) (input-rewrite-fn ''identity))
   "Make Emacs itself a REPL for your given language of choice.
 
   Suppose you're exploring a Python/Ruby/Java/JS/TS/Haskell/Lisps/etc
@@ -251,7 +260,7 @@
     ('java `(repl-driven-development     ,keys "jshell"  :prompt "jshell>"))
     ('terminal `(repl-driven-development ,keys "bash"    :prompt "^[^ ]*\\$"))
     ('python `(repl-driven-development   ,keys "python3" :prompt ">>>"))
-    (t `(-let* (((repl . args) (s-split " " ,cli)))
+    (_ `(-let* (((repl . args) (s-split " " ,cli)))
      ;; (repl-fun-name string)
      (setf (rdd@ repl cmd) repl) ;; String
      (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
@@ -261,6 +270,9 @@
      (setf (rdd@ repl current-input) "") ;; String
      (setf (rdd@ repl current-input/start) 0)
      (setf (rdd@ repl current-input/end) 0)
+
+     ;; TODO: Document input-rewrite-fn
+     (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
 
      (setf (rdd@ repl init) ,init)
      (cl-assert (or (stringp ,init) (listp ,init)))
@@ -414,7 +426,7 @@ YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
 
 To submit a region, use `%s'." repl-fun-name)
          (setf (rdd@ ,repl current-input) str)
-         (process-send-string (rdd@ ,repl process) str)
+         (process-send-string (rdd@ ,repl process) (apply (rdd@ ,repl input-rewrite-fn) (list str)))
          (process-send-string (rdd@ ,repl process) "\n"))
 
        ;; TODO: Replace rdd---current-input with a symbolic property 'current-input that lives under symbol 'repl/𝑳𝑨𝑵𝑮.
