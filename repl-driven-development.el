@@ -89,7 +89,11 @@
       (setf (rdd@ "node" blink) 'pulsar-green)
       Object.keys({name: "mikle", 1: "one"})
 
-      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>")
+      ;; TODO: Improve default prompt-rx to account for name.*>|$
+
+      ;; Notice associated buffer's name involves only the command "jshell", not the args.
+      ;; See it via C-u 0 C-x C-j.
+      (repl-driven-development [C-x C-j] "jshell --feedback normal" :prompt "jshell>")
       ;; default yellow
       ;; FIXME: I need to select a line before and after the following for it to work as expected.
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
@@ -253,10 +257,10 @@ Usage:
      ;; Identifier "repl-driven-development" is made unique by start-process.
      (setf (rdd@ repl process)
            (apply #'start-process "repl-driven-development"
-                  (format "*REPL/%s*" ,cli) repl args))
+                  (format "*REPL/%s*" repl) repl args))
      ;; https://stackoverflow.com/q/4120054
      ;; (set-process-coding-system repl-process 'unix)
-     (with-current-buffer  (format "*REPL/%s*" ,cli)
+     (with-current-buffer (process-buffer (rdd@ repl process))
        (setq buffer-display-table (make-display-table))
        (aset buffer-display-table ?\^M [])
        (setq buffer-read-only t))
