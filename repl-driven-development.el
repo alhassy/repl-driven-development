@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.3
+;; Version: 1.0.4
 ;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "27.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -65,6 +65,12 @@
 ;; https://github.com/magnars/dash.el
 ;; https://github.com/magnars/s.el
 
+;; TODO: Clean up code ---i.e., address various TODOs.
+;; TODO: Make a mini-tutorial and place it in the pkg docs.
+;; TODO: Implement Read Protocol for Java.
+;; TODO[Low Priority]: Implement pretty printing for Python.
+;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (e.g., JSON.stringify({}, null, 2))
+
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
       (eval-buffer)
@@ -72,7 +78,7 @@
       (setq tooltip-delay 0)
 
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
-      echo "It is $(date) and I am at $HOME, my name is $(whoami) and I have: \n $(ls)"
+      echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: \n $(ls)"
       ;; We can also restart the repl... let's set some state
       export X=123
       echo $X
@@ -95,30 +101,65 @@
       ;; Notice associated buffer's name involves only the command "jshell", not the args.
       ;; See it via C-u 0 C-x C-j.
       (repl-driven-development [C-x C-j] java)
-      ;; FIXME/Minor: I need to select a line before and after the following for it to work as expected:
-      ;; ie to show the output overlay where I want it.
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
 
-      ;; Select the following three lines, then submit this region with C-x C-j
-      IntStream
-      /* a multi-line
-      * comment */
-      .range(0, 23)
-      // Now print it out
-      .forEach(x -> System.out.println(x))
+      ;; Select the following 6 lines, then submit this region with C-x C-j
+      ;; IntStream
+      ;; /* a multi-line
+      ;; * comment */
+      ;; .range(0, 23)
+      ;; // Now print it out
+      ;; .forEach(x -> System.out.println(x))
 
       ;; Likewise JS
       (repl-driven-development [C-x C-n] javascript)
-      [...Array(40).keys()]
-      // yay, a comment in the middle
-      .map(x => x % 3 == 0 ? "Fizz" : x)
+      ;; [...Array(40).keys()]
+      ;; // yay, a comment in the middle
+      ;; .map(x => x % 3 == 0 ? "Fizz" : x)
 
-      ;; FIXME: For some reason in Emacs shells, input at the python3 repl is duplicated.
-      ;; Easy hack: Chop current input from the supposed output. MA: Wait, is this happening with Java too?
-      ;; FIXME: (repl-driven-development [C-x C-p] python)
-      ;; (repl-driven-development  [C-x C-p] "python3" :prompt ">>>" :input-rewrite-fn (lambda (in) (message-box in)))
-      (1 + 2)
+      (repl-driven-development  [C-x C-p] "python3" :prompt ">>>"
+                                :input-rewrite-fn (lambda (in)
+                                                    ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
+                                                    (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
+                                :echo-rewrite-fn (lambda (echo)
+                                                   (-let [result (s-chop-prefix (rdd@ "python3" current-input) echo)]
+                                                     ;; Default python repl emits nothing on def|class declarations, let's change that.
+                                                     (cond ((s-starts-with? "def" (rdd@ "python3" current-input))
+                                                            (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”"
+                                                                              (rdd@ "python3" current-input)))
+                                                           ((s-starts-with? "class" (rdd@ "python3" current-input))
+                                                            (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”"
+                                                                              (rdd@ "python3" current-input)))
+                                                           (t result)
+                                                           ))))
+      ;; Send each line, one at a time.
+      1 + 2 * 3
+      def foo(x): return x*x
+      foo(5)
+      list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
+      ;; (Above shows Result Truncated due to my use of eros, which has this limit. TODO[Low Priority]: Fix this.)
 
+      ;; We can do multi-line def ---MA: The quotes are to allow me to indent, otherwise my aggressive-formatter strips the whitespace away.
+      "
+def square(x):
+   return x * x
+"
+      square(5)
+
+      ;; Likewise for class-es:
+      "
+          class AMyClass():
+              i = 12345
+
+              def f(self):
+                  return 'hello world'
+"
+
+      x = AMyClass()
+      x.i
+      x.f()
+
+      Notice that the code is identend nicely.
       )
 
 (require 's)               ;; “The long lost Emacs string manipulation library”
@@ -140,10 +181,10 @@
       (rdd@ \"foo\" name)                ;; ⇒ nil
       (setf (rdd@ \"foo\" name) 'Jasim)
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
-  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+      `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
 ;;;###autoload
-(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow) (input-rewrite-fn ''identity))
+(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow) (input-rewrite-fn ''identity) (echo-rewrite-fn ''identity))
   "Make Emacs itself a REPL for your given language of choice.
 
   Suppose you're exploring a Python/Ruby/Java/JS/TS/Haskell/Lisps/etc
@@ -285,8 +326,9 @@
      (setf (rdd@ repl current-input/start) 0)
      (setf (rdd@ repl current-input/end) 0)
 
-     ;; TODO: Document input-rewrite-fn
+     ;; TODO: Document these two
      (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
+     (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn) ;; Intentionally meant for human friendly pretty-printing, not for the READ protocol. Those serve different goals. Document this. By default, the READ protocol should be this echo-rewrite-fn.
 
      (setf (rdd@ repl init) ,init)
      (cl-assert (or (stringp ,init) (listp ,init)))
@@ -363,7 +405,7 @@
        ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
        ;; it does some sexp look-about, which may not mix well with, say, JS
        ;; arrow functions, so we freeze such movements, locally. ﴿
-       (setq output (rdd---ignore-ansi-color-codes output))
+       (setq output (apply (rdd@ repl echo-rewrite-fn) (list (rdd---ignore-ansi-color-codes output))))
        (unless (s-blank? (s-trim output))
          ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
          (unless  (equal output (s-trim (rdd@ repl current-input)))
@@ -428,12 +470,13 @@ The read protocol is the “R” of “REPL”; it is fundamental if you want to
 the result of an evaluation into the current buffer, say, for forming tests,
 and so require the inserted text to also be executable.
 
-By default, this method returns the given string as-is.
+By default, this method returns the human pretty-printing that the overlay echo
+mechanism uses.
 
 YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
 (If you care about how inserted code looks.)"
          (interactive "sRead: ")
-         str)
+         (apply (rdd@ ,repl echo-rewrite-fn) (list str)))
 
        (defun ,(intern (format "%s/submit" repl-fun-name)) (str)
          ,(format "Send STR to the REPL process, followed by a newline.
