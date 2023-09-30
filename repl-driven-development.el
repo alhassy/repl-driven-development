@@ -72,7 +72,7 @@
       (setq tooltip-delay 0)
 
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
-      echo "I am from $HOME, my name is $(whoami) and I have: \n $(ls)"
+      echo "It is $(date) and I am at $HOME, my name is $(whoami) and I have: \n $(ls)"
       ;; We can also restart the repl... let's set some state
       export X=123
       echo $X
@@ -88,6 +88,7 @@
 
       (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>")
       ;; default yellow
+      ;; FIXME: I need to select a line before and after the following for it to work as expected.
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
 
       )
@@ -103,9 +104,6 @@
   "Print the current repl-driven-development version in the minibuffer."
   (interactive)
   (message repl-driven-development-version))
-
-(defvar rdd---current-input nil
-  "Used to avoid scenarios where input is echoed thereby accidentally treating it as a repl output.")
 
 (defmacro rdd@ (cmd property)
   "Get/set PROPERTY under namespace CMD.
@@ -238,6 +236,10 @@ Usage:
      (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
      (setf (rdd@ repl keybinding) ,keys) ;; String
      (setf (rdd@ repl docs) (s-join " " ,docs)) ;; String: Space separated list
+     ;; Used to avoid scenarios where input is echoed thereby accidentally treating it as a repl output
+     (setf (rdd@ repl current-input) "") ;; String
+     (setf (rdd@ repl current-input/start) 0)
+     (setf (rdd@ repl current-input/end) 0)
 
      (setf (rdd@ repl prologue) ,prologue)
      (cl-assert (or (stringp ,prologue) (listp ,prologue)))
@@ -268,30 +270,30 @@ Usage:
      ;; Return the REPL process to the user.
      (rdd@ repl process)))
 
-;; TODO. (use-package erefactor)
+  ;; TODO. (use-package erefactor)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun rdd---main-callback (repl)
-  `(lambda (process output)
+  (defun rdd---main-callback (repl)
+    `(lambda (process output)
 
-     ;; The *REPL* buffer shows things exactly as they'd look like
-     ;; in a standard interaction in the terminal.
-     (rdd---insertion-filter process output)
+       ;; The *REPL* buffer shows things exactly as they'd look like
+       ;; in a standard interaction in the terminal.
+       (rdd---insertion-filter process output)
 
-     ;; This is done to provide a richer, friendlier, interaction.
-     ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
-     (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) "" (s-replace "\r\n" "" output))))
+       ;; This is done to provide a richer, friendlier, interaction.
+       ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
+       (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) "" (s-replace "\r\n" "" output))))
 
-     ;; thread `output' through output hooks
-     ;; i.e., run all hooks on REPL output, each possibly modifying output
-     (require 'cl)
-     (cl-loop for fun in repl-driven-development/output-hook
-              do (setq output (funcall fun output)))
+       ;; thread `output' through output hooks
+       ;; i.e., run all hooks on REPL output, each possibly modifying output
+       (require 'cl)
+       (cl-loop for fun in repl-driven-development/output-hook
+                do (setq output (funcall fun output)))
 
-     (rdd---insert-or-echo (quote ,repl) output)))
+       (rdd---insert-or-echo (quote ,repl) output)))
 
-(defun rdd---install-any-not-yet-installed-docs (docs)
+  (defun rdd---install-any-not-yet-installed-docs (docs)
   "Install any not-yet-installed docs; returns a List<String> of the intalled docs."
   (when docs
     (require 'devdocs)
@@ -301,36 +303,36 @@ Usage:
     (-let [installed (mapcar #'f-base (f-entries devdocs-data-dir))]
       (--map (unless (member it installed) (devdocs-install (list (cons 'slug it)))) docs))
     docs))
+    )
 
-(defun rdd---insert-or-echo (repl output)
-  "If there's a C-u, then insert the output; else echo it in overlay"
-  (cl-assert (stringp output))
-  (pcase current-prefix-arg
-    ('(4) (unless (equal output (s-trim rdd---current-input))
-            (insert " " (funcall (intern (format "repl/%s/read" (rdd@ repl cmd))) output)))) ;; (funcall (intern "repl/node/read") "hola")
-    ;; All other prefixes are handled by repl-fun-name, above.
-    (_
-     ;; Show output as an overlay at the current cursor position
-     ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
-     ;; it does some sexp look-about, which may not mix well with, say, JS
-     ;; arrow functions, so we freeze such movements, locally. ﴿
-     (setq output (rdd---ignore-ansi-color-codes output))
-     (unless (s-blank? (s-trim output))
-       (setq repl-driven-development-current--output output)
-       ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
-       (unless  (equal output (s-trim rdd---current-input))
-         (save-excursion
-           (goto-char (point-min))
-           (while (re-search-forward (regexp-quote rdd---current-input) nil t)
-             (mapcar #'delete-overlay (overlays-at (match-beginning 0)))
-             (let ((overlay (make-overlay (match-beginning 0) (match-end 0))))
-               (overlay-put overlay 'help-echo output)))))
-       (thread-yield)
-       (require 'eros)
-       (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
-         (eros--make-result-overlay output
-           :format  " ⮕ %s"
-           :duration repl-driven-development/echo-duration))))))
+    (defun rdd---insert-or-echo (repl output)
+      "If there's a C-u, then insert the output; else echo it in overlay"
+      (cl-assert (stringp output))
+      (pcase current-prefix-arg
+        ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
+                (insert " " (funcall (intern (format "repl/%s/read" (rdd@ repl cmd))) output)))) ;; (funcall (intern "repl/node/read") "hola")
+        ;; All other prefixes are handled by repl-fun-name, above.
+        (_
+         ;; Show output as an overlay at the current cursor position
+         ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
+         ;; it does some sexp look-about, which may not mix well with, say, JS
+         ;; arrow functions, so we freeze such movements, locally. ﴿
+         (setq output (rdd---ignore-ansi-color-codes output))
+         (unless (s-blank? (s-trim output))
+           (setq repl-driven-development-current--output output)
+           ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
+           (unless  (equal output (s-trim (rdd@ repl current-input)))
+             ;; MA: Not sure why, but the following line cause the top-most rdd call to stall.
+             ;; To avoid the stall, I use a -let.
+             (mapcar #'delete-overlay (overlays-at (rdd@ repl current-input/start)))
+             (let ((overlay (make-overlay (rdd@ repl current-input/start) (rdd@ repl current-input/end))))
+               (overlay-put overlay 'help-echo output))))
+         (thread-yield)
+         (require 'eros)
+         (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
+           (eros--make-result-overlay output
+             :format  " ⮕ %s"
+             :duration repl-driven-development/echo-duration))))))
 
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
@@ -409,10 +411,8 @@ YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
        (defun ,(intern (format "%s/submit" repl-fun-name)) (str)
          ,(format "Send STR to the REPL process, followed by a newline.
 
-To submit a region, use `%s'.
-
-This updates `rdd---current-input' to be STR." repl-fun-name)
-         (setq rdd---current-input str)
+To submit a region, use `%s'." repl-fun-name)
+         (setf (rdd@ ,repl current-input) str)
          (process-send-string (rdd@ ,repl process) str)
          (process-send-string (rdd@ ,repl process) "\n"))
 
@@ -443,6 +443,8 @@ This updates `rdd---current-input' to be STR." repl-fun-name)
                          (setq region-beg (point))
                          (end-of-line)
                          (setq region-end (point)))
+                       (setf (rdd@ ,repl current-input/start) region-beg)
+                       (setf (rdd@ ,repl current-input/end) region-end)
                        ;; TODO: Need to make this newline deletion a toggle, otherwise I suspect issues with python!
                        (,(intern (format "%s/submit" repl-fun-name))
                         (s-replace-regexp "\n" "" (s-trim-left (buffer-substring-no-properties region-beg region-end)))))))))))
