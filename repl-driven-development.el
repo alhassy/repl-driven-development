@@ -92,8 +92,6 @@
       (setf (rdd@ "node" blink) 'pulsar-green)
       Object.keys({name: "mikle", 1: "one"})
 
-      ;; FIXME: Multi-line input is busted for JS/Java. ;; TODO: s-replace-regexp "\n" ""
-
       ;; Notice associated buffer's name involves only the command "jshell", not the args.
       ;; See it via C-u 0 C-x C-j.
       (repl-driven-development [C-x C-j] java)
@@ -101,16 +99,22 @@
       ;; ie to show the output overlay where I want it.
       IntStream.range(0, 23).forEach(x -> System.out.println(x))
 
-      ;; JShell does semicolon insertion eagerly, so it things the following are three separate
-      ;; expressions! We can fix this by removing new lines.
-      (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>" :input-rewrite-fn (lambda (in) (s-replace-regexp "\n" "" in)))
       ;; Select the following three lines, then submit this region with C-x C-j
       IntStream
+      /* a multi-line
+      * comment */
       .range(0, 23)
+      // Now print it out
       .forEach(x -> System.out.println(x))
 
+      ;; Likewise JS
+      (repl-driven-development [C-x C-n] javascript)
+      [...Array(40).keys()]
+      // yay, a comment in the middle
+      .map(x => x % 3 == 0 ? "Fizz" : x)
+
       ;; FIXME: For some reason in Emacs shells, input at the python3 repl is duplicated.
-      ;; Easy hack: Chop current input from the supposed output.
+      ;; Easy hack: Chop current input from the supposed output. MA: Wait, is this happening with Java too?
       ;; FIXME: (repl-driven-development [C-x C-p] python)
       ;; (repl-driven-development  [C-x C-p] "python3" :prompt ">>>" :input-rewrite-fn (lambda (in) (message-box in)))
       (1 + 2)
@@ -255,12 +259,22 @@
   same author: http://alhassy.com/making-vscode-itself-a-java-repl
   "
 
-  ;; TODO: Document that `cli` can be the unquoted symbols: java, python, terminal
-  (pcase cli
-    ('java `(repl-driven-development     ,keys "jshell"  :prompt "jshell>"))
-    ('terminal `(repl-driven-development ,keys "bash"    :prompt "^[^ ]*\\$"))
-    ('python `(repl-driven-development   ,keys "python3" :prompt ">>>"))
-    (_ `(-let* (((repl . args) (s-split " " ,cli)))
+  ;; TODO: Document that `cli` can be the unquoted symbols: java, python, terminal, javascript
+  (-let [strip-out-C-style-comments&newlines  '(lambda (in) (thread-last in
+                                                                      ;; strip out comments!
+                                                                      (s-replace-regexp "/\\*.\\*/" "")
+                                                                      (s-replace-regexp "//.*$" "")
+                                                                      (s-replace-regexp "\n" "")
+                                                                      ))]
+    (pcase cli
+      ('java       ;; JShell does semicolon insertion eagerly, so it things the following are three separate
+      ;; expressions! We can fix this by removing new lines.
+       `(repl-driven-development ,keys "jshell" :prompt "jshell>" :input-rewrite-fn ,strip-out-C-style-comments&newlines))
+       ;; Likewise JS does eager semicolon insertion.
+      ('javascript `(repl-driven-development ,keys "node" :prompt ">" :input-rewrite-fn ,strip-out-C-style-comments&newlines))
+      ('terminal `(repl-driven-development ,keys "bash"    :prompt "^[^ ]*\\$"))
+      ('python `(repl-driven-development   ,keys "python3" :prompt ">>>"))
+      (_ `(-let* (((repl . args) (s-split " " ,cli)))
      ;; (repl-fun-name string)
      (setf (rdd@ repl cmd) repl) ;; String
      (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
@@ -301,7 +315,7 @@
      (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
 
      ;; Return the REPL process to the user.
-     (rdd@ repl process)))))
+     (rdd@ repl process))))))
 
 ;; TODO. (use-package erefactor)
 
