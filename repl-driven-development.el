@@ -80,6 +80,9 @@
       echo $X
       ;; C-x C-t on the above line emits no value
 
+      ;; Init code works upon initialisation, neato!
+      (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)")
+
       (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
       ;; Change colour with C-x C-e, then C-x C-n on the line after.
@@ -115,7 +118,7 @@ Usage:
   `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
 ;;;###autoload
-(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (prologue "") (blink ''pulsar-yellow))
+(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow))
   "Make Emacs itself a REPL for your given language of choice.
 
   Suppose you're exploring a Python/Ruby/Java/JS/TS/Haskell/Lisps/etc
@@ -216,7 +219,7 @@ Usage:
     Visit https://devdocs.io/ to see the list of documented languages
     and libraries.
 
-  - PROLOGUE [String | List<String>]: Any initial code you'd like your
+  - init [String | List<String>]: Any initial code you'd like your
     repl to be initiated with. For example, imports of standard libraries
     is probably something you'd always like to have on-hand; or perhaps
     some useful variables/declarations/functions.
@@ -241,10 +244,10 @@ Usage:
      (setf (rdd@ repl current-input/start) 0)
      (setf (rdd@ repl current-input/end) 0)
 
-     (setf (rdd@ repl prologue) ,prologue)
-     (cl-assert (or (stringp ,prologue) (listp ,prologue)))
-     (when (listp ,prologue) (setq ,prologue (s-join "\n" ,prologue)))
-     (cl-assert (stringp ,prologue))
+     (setf (rdd@ repl init) ,init)
+     (cl-assert (or (stringp ,init) (listp ,init)))
+     (when (listp ,init) (setq ,init (s-join "\n" ,init)))
+     (cl-assert (stringp ,init))
 
      (setf (rdd@ repl blink) ,blink)
      ;; Identifier "repl-driven-development" is made unique by start-process.
@@ -261,7 +264,7 @@ Usage:
      (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
      (eval (rdd---make-repl-function repl))
 
-     (process-send-string (rdd@ repl process) ,prologue)
+     (process-send-string (rdd@ repl process) ,init)
      (process-send-string (rdd@ repl process) "\n")
 
      ;; Callback: Write the actual output to the REPL buffer and emit overlay.
@@ -364,7 +367,7 @@ Invoke once to go to the REPL buffer; invoke again to jump back to your original
                                   (rdd@ ,repl cmd)
                                   :prompt (rdd@ ,repl prompt)
                                   :docs (rdd@ ,repl docs)
-                                  :prologue (rdd@ ,repl prologue)
+                                  :init (rdd@ ,repl init)
                                   :blink (rdd@ ,repl blink)))
 
        (defun ,(intern (format "%s/docs-at-point" repl-fun-name)) ()
