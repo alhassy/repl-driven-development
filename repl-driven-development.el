@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.4
+;; Version: 1.0.5
 ;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "27.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -27,22 +27,7 @@
 ;; This library provides the Emacs built-in “C-x C-e” behaviour for
 ;; arbitrary languages, provided they have a REPL shell command.
 ;;
-;;
-;; Minimal Working Example [Java]:
-;;
-;;   ;; Set “C-x C-j” to evaluate Java code in a background REPL.
-;;   (repl-driven-development [C-x C-j] "jshell" :prompt "jshell>")
-;;
-;;   // Select this Java snippet, then press “C-x C-j” to evaluate it
-;;   import javax.swing.*;
-;;   var frame = new JFrame(){{ setAlwaysOnTop(true); }};
-;;   JOptionPane.showMessageDialog(frame, "Super nice!");
-;;
-;;   // REPL result values are shown as overlays:
-;;   2 + 4 // ⇒ 6
-;;
-;;
-;; Benefits:
+;; ============================Benefits===============================
 ;;
 ;; Whenever reading/refactoring some code, if you can make some of it
 ;; self-contained, then you can immediately try it out! No need to
@@ -57,8 +42,100 @@
 ;; This allows for a nice scripting experience where results
 ;; are kept for future use.
 ;;
-;; This file has been tangled from a literate, org-mode, file.
-
+;;
+;; ===============================Official Manual========================
+;;
+;; See http://alhassy.com/repl-driven-development
+;;
+;; “C-h o repl-driven-development” also has extensive docs,
+;; via a JavaScript server example.
+;;
+;; ===============================Mini-Tutorial==========================
+;;
+;; Often, while reading a README file, we will (1) copy a shell command,
+;; (2) open a terminal, and (3) paste the shell command to run it.
+;; We can evaluate arbitrary regions in a shell in one step via “C-x C-t”
+;; with:
+;;
+;;    (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
+;;
+;; For example, execute “C-x C-t” anywhere on each line below and see results in an
+;; overlay, right by your cursor.
+;;
+;;   echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: \n $(ls)"
+;;
+;;   say "My name is $(whoami) and I like Emacs"
+;;
+;; Notice as each line is sent to the Bash process, the line is highlighted briefly in green.
+;; Moreover, you can hover over the text to see a tooltip with the resulting shell output.
+;; Finally, if you invoke “C-h k C-x C-t” you get help about this new “C-x C-t” command,
+;; such as inserting results at point via “C-u C-x C-t” or to reset/refresh the current
+;; Bash process with “C-u -1 C-x C-t”.
+;;
+;; This also works for any command-line REPL; for example, for Python:
+;;
+;;    (repl-driven-development [C-x C-p] "python3")
+;;
+;; Then, we can submit the following Python snippets with “C-x C-p” on each line.
+;;
+;;   sum([1, 2, 3, 4])
+;;
+;;   list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
+;;
+;; These work fine, however there are some shortcomings of this REPL.
+;; For example, echoing results could be prettier and it doesn't handle
+;; multi-line input very well. You can address these issues using the various
+;; hooks / keyword arguments of the “repl-driven-development” macro.
+;;
+;; However, this package comes with preconfigured REPLS for: python, terminal,
+;; java, javascript.
+;;
+;; Simply use the name of these configurations:
+;;
+;;   (repl-driven-development [C-x C-t] terminal)
+;;
+;; Now we can submit the following, with “C-x C-p”, with no issues:
+;;
+;;   def square(x):
+;;     return x * x
+;;
+;;   square(5)
+;;
+;; Since these new REPL commands are just Emacs functions, we can use
+;; several at the time, alternating between them. For example:
+;;
+;;   ;; C-x C-e on the next two lines
+;;   (repl-driven-development [C-x C-t] terminal)
+;;   (repl-driven-development [C-x C-p] python)
+;;
+;;   echo Hello... > /tmp/o       # C-x C-t here
+;;
+;;   print(open("/tmp/o").read()) # C-x C-p here
+;;
+;;   echo ...and bye >> /tmp/o    # C-x C-t again
+;;
+;;   print(open("/tmp/o").read()) # C-x C-p again
+;;
+;; Let's conclude with a GUI example in Java.
+;;
+;;   ;; Set “C-x C-j” to evaluate Java code in a background REPL.
+;;   (repl-driven-development [C-x C-j] "jshell")
+;;
+;;   // Select this Java snippet, then press “C-x C-j” to evaluate it
+;;   import javax.swing.*;
+;;   JOptionPane.showMessageDialog(new JFrame(){{setAlwaysOnTop(true);}}, "Super nice!")
+;;
+;; We can use a preconfigured Java REPL, to remove the annoying “jshell>” prompt
+;; from overlay echos, handle multi-line input, and more.
+;;
+;;   (repl-driven-development [C-x C-j] java)
+;;
+;;  // REPL result values are shown as overlays:
+;;  // See a list of 23 numbers, which are attached as a tooltip to this text.
+;;  IntStream.range(0, 23).forEach(x -> System.out.println(x))
+;;
+;; For more documentation, and examples, see http://alhassy.com/repl-driven-development
+;;
 ;;; Code:
 
 ;; String and list manipulation libraries
@@ -66,7 +143,7 @@
 ;; https://github.com/magnars/s.el
 
 ;; TODO: Clean up code ---i.e., address various TODOs.
-;; TODO: Make a mini-tutorial and place it in the pkg docs.
+;; TODO: Add mini-tutorial, from pkg docs, to Github README.
 ;; TODO: Implement Read Protocol for Java.
 ;; TODO[Low Priority]: Implement pretty printing for Python.
 ;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (e.g., JSON.stringify({}, null, 2))
@@ -74,11 +151,20 @@
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
       (eval-buffer)
+      (use-package erefactor)
+
       ;; Nearly instantaneous display of tooltips.
       (setq tooltip-delay 0)
 
+      ;; A simple terminal REPL works as expected.
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
       echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: \n $(ls)"
+
+      ;; Insert the result of the above shell command with C-u C-x C-t.
+
+      ;; Or see it in its own buffer with M-x ...
+      (repl/bash/display-most-recent-result) ;; i.e., (rdd@ "bash" output)
+
       ;; We can also restart the repl... let's set some state
       export X=123
       echo $X
@@ -89,57 +175,49 @@
       ;; Init code works upon initialisation, neato!
       (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)")
 
-      ;; We can get rid of the prompt at the end with
+      ;; We can get rid of the prompt at the end with :prompt
       (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)" :prompt "^[^ ]*\\$")
 
+      ;; We can change the blinking colours via rdd@.
       (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
       ;; Change colour with C-x C-e, then C-x C-n on the line after.
       (setf (rdd@ "node" blink) 'pulsar-green)
       Object.keys({name: "mikle", 1: "one"})
 
+      ;; We can use a preconfigured REPL.
+      ;;
       ;; Notice associated buffer's name involves only the command "jshell", not the args.
       ;; See it via C-u 0 C-x C-j.
       (repl-driven-development [C-x C-j] java)
-      IntStream.range(0, 23).forEach(x -> System.out.println(x))
-
+      ;;
+      ;; This allows us to submit multi-line input seamlessly.
       ;; Select the following 6 lines, then submit this region with C-x C-j
-      ;; IntStream
-      ;; /* a multi-line
-      ;; * comment */
-      ;; .range(0, 23)
-      ;; // Now print it out
-      ;; .forEach(x -> System.out.println(x))
+      IntStream
+      /* a multi-line
+      * comment */
+      .range(0, 23)
+      // Now print it out
+      .forEach(x -> System.out.println(x))
 
-      ;; Likewise JS
+      ;; Likewise for NodeJS
       (repl-driven-development [C-x C-n] javascript)
-      ;; [...Array(40).keys()]
-      ;; // yay, a comment in the middle
-      ;; .map(x => x % 3 == 0 ? "Fizz" : x)
+      ;; Then submit:
+      [...Array(40).keys()]
+      // yay, a comment in the middle
+      .map(x => x % 3 == 0 ? "Fizz" : x)
 
-      (repl-driven-development  [C-x C-p] "python3" :prompt ">>>"
-                                :input-rewrite-fn (lambda (in)
-                                                    ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
-                                                    (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
-                                :echo-rewrite-fn (lambda (echo)
-                                                   (-let [result (s-chop-prefix (rdd@ "python3" current-input) echo)]
-                                                     ;; Default python repl emits nothing on def|class declarations, let's change that.
-                                                     (cond ((s-starts-with? "def" (rdd@ "python3" current-input))
-                                                            (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”"
-                                                                              (rdd@ "python3" current-input)))
-                                                           ((s-starts-with? "class" (rdd@ "python3" current-input))
-                                                            (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”"
-                                                                              (rdd@ "python3" current-input)))
-                                                           (t result)
-                                                           ))))
+      ;; Likewise for Python
+      (repl-driven-development  [C-x C-p] python)
       ;; Send each line, one at a time.
       1 + 2 * 3
       def foo(x): return x*x
       foo(5)
       list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
       ;; (Above shows Result Truncated due to my use of eros, which has this limit. TODO[Low Priority]: Fix this.)
-
-      ;; We can do multi-line def ---MA: The quotes are to allow me to indent, otherwise my aggressive-formatter strips the whitespace away.
+      ;;
+      ;; We can do multi-line def ---The quotes are to allow me to indent,
+      ;; otherwise my aggressive-formatter strips the whitespace away.
       "
 def square(x):
    return x * x
@@ -148,18 +226,18 @@ def square(x):
 
       ;; Likewise for class-es:
       "
-          class AMyClass():
+          class MyClass():
               i = 12345
 
               def f(self):
                   return 'hello world'
 "
 
-      x = AMyClass()
+      x = MyClass()
       x.i
       x.f()
 
-      Notice that the code is identend nicely.
+      ;; Notice that the code is identend nicely.
       )
 
 (require 's)               ;; “The long lost Emacs string manipulation library”
@@ -181,10 +259,44 @@ def square(x):
       (rdd@ \"foo\" name)                ;; ⇒ nil
       (setf (rdd@ \"foo\" name) 'Jasim)
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
-      `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+
+(defun repl-driven-development/preconfigured-REPL/python (keys)
+  "A Python REPL configuration.
+
+This configuration fixes the following shortcomings of the default Python CLI repl:
+
+❌ The Python repl abruptly terminates def|class definitions when there is an empty new line in their definition.
+✓ This configuration strips out all empty newlines.
+
+❌ The Python repl requires an extra new line after a def|class definition to confirm that the definition has concluded.
+✓ This configuration automatically adds such extra new lines.
+
+❌ The Python repl emits nothing when a def|class declaration is submitted.
+✓ This configuration emits a “Defined ⋯” message, along with the declaration's body.
+"
+  (repl-driven-development
+   keys
+   "python3"
+   :prompt ">>>"
+   :blink 'pulsar-red
+   ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
+   :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
+   ;; Default python repl emits nothing on def|class declarations, let's change that.
+   :echo-rewrite-fn (lambda (echo)
+                      (let* ((input  (rdd@ "python3" current-input))
+                             (result (s-chop-prefix input echo)))
+                        (cond ((s-starts-with? "def" input)
+                               (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
+                              ((s-starts-with? "class" input)
+                               (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
+                              (t result))))))
 
 ;;;###autoload
-(cl-defmacro repl-driven-development (keys cli &key (prompt ">") docs (init "") (blink ''pulsar-yellow) (input-rewrite-fn ''identity) (echo-rewrite-fn ''identity))
+(cl-defmacro repl-driven-development
+    (keys cli
+          &key (prompt ">") docs (init "") (blink ''pulsar-yellow)
+          (input-rewrite-fn ''identity) (echo-rewrite-fn ''identity))
   "Make Emacs itself a REPL for your given language of choice.
 
   Suppose you're exploring a Python/Ruby/Java/JS/TS/Haskell/Lisps/etc
@@ -262,9 +374,16 @@ def square(x):
   - KEYS [Vector]: A vector such as [C-x C-p] that declares the keybindings for
     the new REPL evaluator.
 
-  - CLI [String]: A string denoting the terminal command to start your repl;
+  - CLI [String|Symbol]: A string denoting the terminal command to start your repl;
     you may need an “-i” flag to force it to be interactive even though
     we use it from a child process rather than a top-level shell.
+
+    This argument may also be one of the following unquoted symbols:
+
+        java, python, terminal, javascript
+
+    These are preconfigured REPLs; e.g., see the docs of
+    `repl-driven-development/preconfigured-REPL/python'.
 
   - PROMPT [Regular Expression]:
     What is the prompt that your REPL shows, e.g., “>”.
@@ -285,7 +404,7 @@ def square(x):
     Visit https://devdocs.io/ to see the list of documented languages
     and libraries.
 
-  - init [String | List<String>]: Any initial code you'd like your
+  - INIT [String | List<String>]: Any initial code you'd like your
     repl to be initiated with. For example, imports of standard libraries
     is probably something you'd always like to have on-hand; or perhaps
     some useful variables/declarations/functions.
@@ -293,73 +412,82 @@ def square(x):
   - BLINK [Face]: Any face with a background. It is used to briefly highlight
     the current line that is being sent to the REPL process.
 
+  - INPUT-REWRITE-FN [1-arg function]: A function called to rewrite text
+    before submitting it to the repl. For example usage, see the docs of
+    `repl-driven-development/preconfigured-REPL/python'.
+
+  - ECHO-REWRITE-FN [1-arg function]: A function called to rewrite repl
+    output before echoing it to the user.  For example usage, see the docs
+    of `repl-driven-development/preconfigured-REPL/python'.
+
+    Intentionally meant for human friendly pretty-printing, not for
+    a READ protocol. Those serve different goals.
+    The default READ protocol is this echo-rewrite-fn.
+    Enter “M-x repl/.*/read” to see the docs of the READ protocol
+    for any REPL defined with this macro.
+
   Finally, you may register callbacks via `repl-driven-development-output-hook'.
 
   ### Misc Remarks #####################################################
   VSCode has a similar utility for making in-editor REPLs, by the
   same author: http://alhassy.com/making-vscode-itself-a-java-repl
   "
-
-  ;; TODO: Document that `cli` can be the unquoted symbols: java, python, terminal, javascript
-  (-let [strip-out-C-style-comments&newlines  '(lambda (in) (thread-last in
-                                                                      ;; strip out comments!
-                                                                      (s-replace-regexp "/\\*.\\*/" "")
-                                                                      (s-replace-regexp "//.*$" "")
-                                                                      (s-replace-regexp "\n" "")
-                                                                      ))]
+  (-let [strip-out-C-style-comments&newlines
+         '(lambda (in) (thread-last
+                    in
+                    (s-replace-regexp "/\\*.\\*/" "")
+                    (s-replace-regexp "//.*$" "")
+                    (s-replace-regexp "\n" "")))]
     (pcase cli
-      ('java       ;; JShell does semicolon insertion eagerly, so it things the following are three separate
-      ;; expressions! We can fix this by removing new lines.
+      ('java
+       ;; JShell does semicolon insertion eagerly, so it things the following are three separate
+       ;; expressions! We can fix this by removing new lines.
        `(repl-driven-development ,keys "jshell" :prompt "jshell>" :input-rewrite-fn ,strip-out-C-style-comments&newlines))
-       ;; Likewise JS does eager semicolon insertion.
+      ;; Likewise JS does eager semicolon insertion.
       ('javascript `(repl-driven-development ,keys "node" :prompt ">" :input-rewrite-fn ,strip-out-C-style-comments&newlines))
-      ('terminal `(repl-driven-development ,keys "bash"    :prompt "^[^ ]*\\$"))
-      ('python `(repl-driven-development   ,keys "python3" :prompt ">>>"))
+      ('terminal `(repl-driven-development ,keys "bash"   :prompt "^[^ ]*\\$"))
+      ('python `(repl-driven-development/preconfigured-REPL/python ,keys))
       (_ `(-let* (((repl . args) (s-split " " ,cli)))
-     ;; (repl-fun-name string)
-     (setf (rdd@ repl cmd) repl) ;; String
-     (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
-     (setf (rdd@ repl keybinding) ,keys) ;; String
-     (setf (rdd@ repl docs) (s-join " " ,docs)) ;; String: Space separated list
-     ;; Used to avoid scenarios where input is echoed thereby accidentally treating it as a repl output
-     (setf (rdd@ repl current-input) "") ;; String
-     (setf (rdd@ repl current-input/start) 0)
-     (setf (rdd@ repl current-input/end) 0)
+            ;; (repl-fun-name string)
+            (setf (rdd@ repl cmd) repl) ;; String
+            (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
+            (setf (rdd@ repl keybinding) ,keys) ;; String
+            (setf (rdd@ repl docs) (s-join " " ,docs)) ;; String: Space separated list
+            ;; Used to avoid scenarios where input is echoed thereby accidentally treating it as a repl output
+            (setf (rdd@ repl current-input) "") ;; String
+            (setf (rdd@ repl current-input/start) 0)
+            (setf (rdd@ repl current-input/end) 0)
+            (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
+            (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn)
 
-     ;; TODO: Document these two
-     (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
-     (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn) ;; Intentionally meant for human friendly pretty-printing, not for the READ protocol. Those serve different goals. Document this. By default, the READ protocol should be this echo-rewrite-fn.
+            (setf (rdd@ repl init) ,init)
+            (cl-assert (or (stringp ,init) (listp ,init)))
+            (when (listp ,init) (setq ,init (s-join "\n" ,init)))
+            (cl-assert (stringp ,init))
 
-     (setf (rdd@ repl init) ,init)
-     (cl-assert (or (stringp ,init) (listp ,init)))
-     (when (listp ,init) (setq ,init (s-join "\n" ,init)))
-     (cl-assert (stringp ,init))
+            (setf (rdd@ repl blink) ,blink)
+            ;; Identifier "repl-driven-development" is made unique by start-process.
+            (setf (rdd@ repl process)
+                  (apply #'start-process "repl-driven-development"
+                         (format "*REPL/%s*" repl) repl args))
+            ;; https://stackoverflow.com/q/4120054
+            ;; (set-process-coding-system repl-process 'unix)
+            (with-current-buffer (process-buffer (rdd@ repl process))
+              (setq buffer-display-table (make-display-table))
+              (aset buffer-display-table ?\^M [])
+              (setq buffer-read-only t))
 
-     (setf (rdd@ repl blink) ,blink)
-     ;; Identifier "repl-driven-development" is made unique by start-process.
-     (setf (rdd@ repl process)
-           (apply #'start-process "repl-driven-development"
-                  (format "*REPL/%s*" repl) repl args))
-     ;; https://stackoverflow.com/q/4120054
-     ;; (set-process-coding-system repl-process 'unix)
-     (with-current-buffer (process-buffer (rdd@ repl process))
-       (setq buffer-display-table (make-display-table))
-       (aset buffer-display-table ?\^M [])
-       (setq buffer-read-only t))
+            (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
+            (eval (rdd---make-repl-function repl))
 
-     (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
-     (eval (rdd---make-repl-function repl))
+            (process-send-string (rdd@ repl process) ,init)
+            (process-send-string (rdd@ repl process) "\n")
 
-     (process-send-string (rdd@ repl process) ,init)
-     (process-send-string (rdd@ repl process) "\n")
+            ;; Callback: Write the actual output to the REPL buffer and emit overlay.
+            (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
 
-     ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-     (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
-
-     ;; Return the REPL process to the user.
-     (rdd@ repl process))))))
-
-;; TODO. (use-package erefactor)
+            ;; Return the REPL process to the user.
+            (rdd@ repl process))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -373,6 +501,7 @@ def square(x):
      ;; This is done to provide a richer, friendlier, interaction.
      ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
      (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) "" (s-replace "\r\n" "" output))))
+     (setf (rdd@ (quote ,repl) output) output)
 
      ;; thread `output' through output hooks
      ;; i.e., run all hooks on REPL output, each possibly modifying output
@@ -407,10 +536,7 @@ def square(x):
        ;; arrow functions, so we freeze such movements, locally. ﴿
        (setq output (apply (rdd@ repl echo-rewrite-fn) (list (rdd---ignore-ansi-color-codes output))))
        (unless (s-blank? (s-trim output))
-         ;; TODO [Optimisation]: Consider inlining, since I have the region boundaries already! (from the repl calling function!)
          (unless  (equal output (s-trim (rdd@ repl current-input)))
-           ;; MA: Not sure why, but the following line cause the top-most rdd call to stall.
-           ;; To avoid the stall, I use a -let.
            (mapcar #'delete-overlay (overlays-at (rdd@ repl current-input/start)))
            (let ((overlay (make-overlay (rdd@ repl current-input/start) (rdd@ repl current-input/end))))
              (overlay-put overlay 'help-echo output))))
@@ -486,9 +612,13 @@ To submit a region, use `%s'." repl-fun-name)
          (process-send-string (rdd@ ,repl process) (apply (rdd@ ,repl input-rewrite-fn) (list str)))
          (process-send-string (rdd@ ,repl process) "\n"))
 
-       ;; TODO: Replace rdd---current-input with a symbolic property 'current-input that lives under symbol 'repl/𝑳𝑨𝑵𝑮.
-       ;; Then make a method (repl/𝑳𝑨𝑵𝑮/current-input &optional new-value) to easily get/set this thing.
-       ;; WHY? So that the current-input is namespaced for distinct repl and not globally shared.
+       (defun ,(intern (format "%s/display-most-recent-result" repl-fun-name)) ()
+         "Show most recent REPL result. With C-u prefix, result is shown in its own buffer."
+         (interactive)
+         (if (not current-prefix-arg)
+             (display-message-or-buffer (rdd@ ,repl output))
+           (switch-to-buffer (format "*REPL/%s/most-recent-result*" ,repl))
+           (insert (rdd@ ,repl output))))
 
        (bind-key* (s-join " " (mapcar #'pp-to-string (rdd@ ,repl keybinding)))
                   (defun ,repl-fun-name (region-beg region-end)
@@ -515,9 +645,7 @@ To submit a region, use `%s'." repl-fun-name)
                          (setq region-end (point)))
                        (setf (rdd@ ,repl current-input/start) region-beg)
                        (setf (rdd@ ,repl current-input/end) region-end)
-                       ;; TODO: Need to make this newline deletion a toggle, otherwise I suspect issues with python!
                        (,(intern (format "%s/submit" repl-fun-name))
-                        ;; TODO: s-replace-regexp "\n" ""
                         (s-trim-left (buffer-substring-no-properties region-beg region-end))))))))))
 
 (defun rdd---docs-at-point (docs)
