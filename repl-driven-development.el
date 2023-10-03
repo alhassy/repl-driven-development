@@ -190,7 +190,6 @@
       ;; Notice associated buffer's name involves only the command "jshell", not the args.
       ;; See it via C-u 0 C-x C-j.
       (repl-driven-development [C-x C-j] java)
-
       ;;
       ;; This allows us to submit multi-line input seamlessly.
       ;; Select the following 6 lines, then submit this region with C-x C-j
@@ -416,12 +415,12 @@ def square(x):
       ('java
        ;; JShell does semicolon insertion eagerly, so it things the following are three separate
        ;; expressions! We can fix this by removing new lines.
-       `(repl-driven-development ,keys "jshell" :name 'java :prompt "jshell>"
+       `(repl-driven-development ,keys "jshell" :name 'repl/java :prompt "jshell>"
                                  :input-rewrite-fn ,strip-out-C-style-comments&newlines))
       ;; Likewise JS does eager semicolon insertion.
-      ('javascript `(repl-driven-development ,keys "node" :name 'javascript
+      ('javascript `(repl-driven-development ,keys "node" :name 'repl/javascript
                                              :prompt ">" :input-rewrite-fn ,strip-out-C-style-comments&newlines))
-      ('terminal `(repl-driven-development ,keys "bash" :name 'terminal
+      ('terminal `(repl-driven-development ,keys "bash" :name 'repl/terminal
                                            :prompt "^[^ ]*\\$"))
       ('python `(repl-driven-development/preconfigured-REPL/python ,keys))
       (_ `(-let* (((repl . args) (s-split " " ,cli)))
@@ -491,7 +490,7 @@ repl:
    keys
    "python3"
    :prompt ">>>"
-   :name 'python
+   :name 'repl/python
    :blink 'pulsar-red
    ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
    :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
