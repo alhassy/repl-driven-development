@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.5
+;; Version: 1.0.6
 ;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "27.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -262,43 +262,6 @@ def square(x):
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
   `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
-(defun repl-driven-development/preconfigured-REPL/python (keys)
-  "A Python REPL configuration.
-
-This configuration fixes the following shortcomings of the default Python CLI
-repl:
-
-❌ The Python repl abruptly terminates def|class definitions when there is an
-  empty new line in their definition.
-✓ This configuration strips out all empty newlines.
-
-❌ The Python repl requires an extra new line after a def|class definition to
-  confirm that the definition has concluded.
-✓ This configuration automatically adds such extra new lines.
-
-❌ The Python repl emits nothing when a def|class declaration is submitted.
-✓ This configuration emits a “Defined ⋯” message, along with the declaration's
-   body.
-"
-  (repl-driven-development
-   keys
-   "python3"
-   :prompt ">>>"
-   :name 'python
-   :blink 'pulsar-red
-   ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
-   :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
-   ;; For some reason, Python (in Emacs shells) emits the input as part of the output, so let's chop it off.
-   ;; Default Python repl emits nothing on def|class declarations, let's change that.
-   :echo-rewrite-fn (lambda (echo)
-                      (let* ((input  (rdd@ "python3" current-input))
-                             (result (s-chop-prefix input echo)))
-                        (cond ((s-starts-with? "def" input)
-                               (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
-                              ((s-starts-with? "class" input)
-                               (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
-                              (t result))))))
-
 ;;;###autoload
 (cl-defmacro repl-driven-development
     (keys cli
@@ -504,6 +467,45 @@ repl:
 
             ;; Return the REPL process to the user.
             (rdd@ repl process))))))
+
+
+(defun repl-driven-development/preconfigured-REPL/python (keys)
+  "A Python REPL configuration.
+
+This configuration fixes the following shortcomings of the default Python CLI
+repl:
+
+❌ The Python repl abruptly terminates def|class definitions when there is an
+  empty new line in their definition.
+✓ This configuration strips out all empty newlines.
+
+❌ The Python repl requires an extra new line after a def|class definition to
+  confirm that the definition has concluded.
+✓ This configuration automatically adds such extra new lines.
+
+❌ The Python repl emits nothing when a def|class declaration is submitted.
+✓ This configuration emits a “Defined ⋯” message, along with the declaration's
+   body.
+"
+  (repl-driven-development
+   keys
+   "python3"
+   :prompt ">>>"
+   :name 'python
+   :blink 'pulsar-red
+   ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
+   :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
+   ;; For some reason, Python (in Emacs shells) emits the input as part of the output, so let's chop it off.
+   ;; Default Python repl emits nothing on def|class declarations, let's change that.
+   :echo-rewrite-fn (lambda (echo)
+                      (let* ((input  (rdd@ "python3" current-input))
+                             (result (s-chop-prefix input echo)))
+                        (cond ((s-starts-with? "def" input)
+                               (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
+                              ((s-starts-with? "class" input)
+                               (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
+                              (t result))))))
+
 
 (defun rdd---main-callback (repl)
   `(lambda (process output)
