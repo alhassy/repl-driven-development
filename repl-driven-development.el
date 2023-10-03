@@ -151,7 +151,11 @@
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
       (eval-buffer)
+      (byte-compile-file "./repl-driven-development.el")
+
       (use-package erefactor)
+      (display-fill-column-indicator-mode)
+      ;; (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
 
       ;; Nearly instantaneous display of tooltips.
       (setq tooltip-delay 0)
@@ -210,33 +214,39 @@
       ;; Likewise for Python
       (repl-driven-development  [C-x C-p] python)
       ;; Send each line, one at a time.
-      1 + 2 * 3
-      def foo(x): return x*x
-      foo(5)
-      list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
-      ;; (Above shows Result Truncated due to my use of eros, which has this limit. TODO[Low Priority]: Fix this.)
-      ;;
-      ;; We can do multi-line def ---The quotes are to allow me to indent,
-      ;; otherwise my aggressive-formatter strips the whitespace away.
       "
-def square(x):
-   return x * x
-"
-      square(5)
+  1 + 2 * 3
 
-      ;; Likewise for class-es:
-      "
-          class MyClass():
-              i = 12345
+  def foo(x): return x*x
 
-              def f(self):
-                  return 'hello world'
-"
+  foo(5)
+
+  list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
+
+  # (Above shows Result Truncated due to my use of eros, which has this limit.
+  # TODO[Low Priority]: Fix this.)
+  #
+  # We can do multi-line def ---The quotes are to allow me to indent,
+  # otherwise my aggressive-formatter strips the whitespace away.
+
+  def square(x):
+     return x * x
+
+  square(5)
+
+# Likewise for class-es:
+
+    class MyClass():
+        i = 12345
+
+        def f(self):
+            return 'hello world'
+
 
       x = MyClass()
       x.i
       x.f()
-
+"
       ;; Notice that the code is identend nicely.
       )
 
