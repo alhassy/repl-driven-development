@@ -57,7 +57,7 @@
 ;; We can evaluate arbitrary regions in a shell in one step via “C-x C-t”
 ;; with:
 ;;
-;;    (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
+;;    (repl-driven-development [C-x C-t] "bash")
 ;;
 ;; For example, execute “C-x C-t” anywhere on each line below and see results in an
 ;; overlay, right by your cursor.
@@ -66,7 +66,7 @@
 ;;
 ;;   say "My name is $(whoami) and I like Emacs"
 ;;
-;; Notice as each line is sent to the Bash process, the line is highlighted briefly in green.
+;; Notice as each line is sent to the Bash process, the line is highlighted briefly in yellow.
 ;; Moreover, you can hover over the text to see a tooltip with the resulting shell output.
 ;; Finally, if you invoke “C-h k C-x C-t” you get help about this new “C-x C-t” command,
 ;; such as inserting results at point via “C-u C-x C-t” or to reset/refresh the current
@@ -92,7 +92,7 @@
 ;;
 ;; Simply use the name of these configurations:
 ;;
-;;   (repl-driven-development [C-x C-t] terminal)
+;;   (repl-driven-development [C-x C-p] python)
 ;;
 ;; Now we can submit the following, with “C-x C-p”, with no issues:
 ;;
