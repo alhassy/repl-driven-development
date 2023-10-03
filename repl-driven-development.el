@@ -282,7 +282,8 @@ This configuration fixes the following shortcomings of the default Python CLI re
    :blink 'pulsar-red
    ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
    :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
-   ;; Default python repl emits nothing on def|class declarations, let's change that.
+   ;; For some reason, Python (in Emacs shells) emits the input as part of the output, so let's chop it off.
+   ;; Default Python repl emits nothing on def|class declarations, let's change that.
    :echo-rewrite-fn (lambda (echo)
                       (let* ((input  (rdd@ "python3" current-input))
                              (result (s-chop-prefix input echo)))
@@ -434,10 +435,10 @@ This configuration fixes the following shortcomings of the default Python CLI re
   "
   (-let [strip-out-C-style-comments&newlines
          '(lambda (in) (thread-last
-                    in
-                    (s-replace-regexp "/\\*.\\*/" "")
-                    (s-replace-regexp "//.*$" "")
-                    (s-replace-regexp "\n" "")))]
+                         in
+                         (s-replace-regexp "/\\*.\\*/" "")
+                         (s-replace-regexp "//.*$" "")
+                         (s-replace-regexp "\n" "")))]
     (pcase cli
       ('java
        ;; JShell does semicolon insertion eagerly, so it things the following are three separate
@@ -488,8 +489,6 @@ This configuration fixes the following shortcomings of the default Python CLI re
 
             ;; Return the REPL process to the user.
             (rdd@ repl process))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun rdd---main-callback (repl)
   `(lambda (process output)
@@ -724,12 +723,6 @@ To submit a region, use `%s'." repl-fun-name)
                      (format "repl/%s/jump-to-process-buffer" cli)
                      (format "repl/%s/restart" cli)
                      (format "repl/%s/submit" cli))))
-
-(defun repl-driven-development--santise-output (output prompt input)
-  "Remove PROMPT from OUTPUT, and ensure OUTPUT does not contain a copy of INPUT."
-  (setq output (s-trim (s-replace "\r" "" (s-replace-regexp prompt "" output))))
-  (-let [no-input-echo (s-trim (s-chop-prefix input output))]
-    (if (s-blank? (s-trim (s-collapse-whitespace no-input-echo))) output no-input-echo)))
 
 (defvar repl-driven-development/output-hook nil
   "A list of functions to execute after REPL output has been computed.
