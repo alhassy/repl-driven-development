@@ -31,7 +31,7 @@
 ;;
 ;; Whenever reading/refactoring some code, if you can make some of it
 ;; self-contained, then you can immediately try it out! No need to
-;; load your entire program; nor copy-paste into an external REPL. The
+;; load your entire program; nor copy-paste into an external REPL.  The
 ;; benefits of Emacs' built-in “C-x C-e” for Lisp, and Lisp's Repl
 ;; Driven Development philosophy, are essentially made possible for
 ;; arbitrary languages (to some approximate degree, but not fully).
@@ -84,7 +84,7 @@
 ;;
 ;; These work fine, however there are some shortcomings of this REPL.
 ;; For example, echoing results could be prettier and it doesn't handle
-;; multi-line input very well. You can address these issues using the various
+;; multi-line input very well.  You can address these issues using the various
 ;; hooks / keyword arguments of the “repl-driven-development” macro.
 ;;
 ;; However, this package comes with preconfigured REPLS for: python, terminal,
@@ -102,7 +102,7 @@
 ;;   square(5)
 ;;
 ;; Since these new REPL commands are just Emacs functions, we can use
-;; several at the time, alternating between them. For example:
+;; several at the time, alternating between them.  For example:
 ;;
 ;;   ;; C-x C-e on the next two lines
 ;;   (repl-driven-development [C-x C-t] terminal)
@@ -151,11 +151,35 @@
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
       (eval-buffer)
-      (byte-compile-file "./repl-driven-development.el")
+      (progn (flycheck-list-errors) (delete-other-windows) (split-window-below 40) (other-window 1) (switch-to-buffer "*Flycheck errors*"))
+      (byte-compile-file (buffer-file-name))
+
+      (save-excursion (package-buffer-info))
+      (elint-current-buffer)
+
+      ;; See errors/warnings in margin and in mode-line
+      (use-package flycheck)
+      (flycheck-mode)
+      ;; Does: (elisp-lint--checkdoc)
+      ;; Interactively fix style issues: (checkdoc)
+
+      (use-package elisp-lint)
+      (setq elisp-lint-file-validators '("byte-compile" "check-declare"
+                                         "checkdoc" "package-lint" "indent" "indent-character" "fill-column" "trailing-whitespace"))
+      (display-message-or-buffer (elisp-lint-file (buffer-file-name)))
+
+      (elisp-lint--byte-compile  (buffer-file-name))
+      (elisp-lint--check-declare (buffer-file-name))
+      (package-lint-current-buffer)
+      (elisp-lint--indent)
+      (elisp-lint--indent-character)
+      (elisp-lint--fill-column)
+      (elisp-lint--trailing-whitespace)
 
       (use-package erefactor)
       (display-fill-column-indicator-mode)
       ;; (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
+      ;; (add-hook 'prog-mode-hook #'flycheck-mode).
 
       ;; Nearly instantaneous display of tooltips.
       (setq tooltip-delay 0)
@@ -258,7 +282,7 @@
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
-  "Print the current repl-driven-development version in the minibuffer."
+  "Print the current `repl-driven-development' version in the minibuffer."
   (interactive)
   (message repl-driven-development-version))
 
@@ -282,7 +306,7 @@
   API, or experimenting with an idea and want immediate feedback.
   You could open a terminal and try things out there; with no editor
   support, and occasionally copy-pasting things back into your editor
-  for future use. Better yet, why not use your editor itself as a REPL.
+  for future use.  Better yet, why not use your editor itself as a REPL.
 
   Implementation & behavioural notes can be found in the JavaScript
   Example below.
@@ -296,7 +320,7 @@
 
   That's it! Press “C-x C-e” on the above line so that “C-x C-j”
   will now evaluate a selection, or the entire line, as if it were
-  JavaScript code. ⟦Why C-x C-j? C-x C-“e” for Emacs Lisp code, and C-x
+  JavaScript code.  ⟦Why C-x C-j? C-x C-“e” for Emacs Lisp code, and C-x
   C-“j” for JavaScript code!⟧ For instance, copy-paste the
   following examples into a JS file ---or just press “C-x C-j” to
   evaluate them!
@@ -315,7 +339,7 @@
   overlay.
 
   How this works is that Emacs spawns a new “node” process, then
-  C-x C-j sends text to that process. Whenever the process emits
+  C-x C-j sends text to that process.  Whenever the process emits
   any output ---on stdout or stderr--- then we emit that to the
   user via an overlay.
 
@@ -372,7 +396,7 @@
   - DOCS [String]: A space-seperated string denoting a list of language documents
     you'd like to associate with your repl.
     Invoking your repl with “C-u C-u” will show the documentation
-    of the word at point. This is done using `devdocs'.
+    of the word at point.  This is done using `devdocs'.
 
     For example,
       (repl-driven-development [C-x C-j] \"node\" :docs \"javascript express\")
@@ -413,8 +437,7 @@
 
   ### Misc Remarks #####################################################
   VSCode has a similar utility for making in-editor REPLs, by the
-  same author: http://alhassy.com/making-vscode-itself-a-java-repl
-  "
+  same author: http://alhassy.com/making-vscode-itself-a-java-repl"
   (-let [strip-out-C-style-comments&newlines
          '(lambda (in) (thread-last
                     in
@@ -479,7 +502,7 @@
 
 
 (defun repl-driven-development/preconfigured-REPL/python (keys)
-  "A Python REPL configuration.
+  "A Python REPL configuration, bound to keybinding KEYS.
 
 This configuration fixes the following shortcomings of the default Python CLI
 repl:
@@ -494,8 +517,7 @@ repl:
 
 ❌ The Python repl emits nothing when a def|class declaration is submitted.
 ✓ This configuration emits a “Defined ⋯” message, along with the declaration's
-   body.
-"
+   body."
   (repl-driven-development
    keys
    "python3"
@@ -517,6 +539,7 @@ repl:
 
 
 (defun rdd---main-callback (repl)
+  "Return the callback that works on REPL."
   `(lambda (process output)
 
      ;; The *REPL* buffer shows things exactly as they'd look like
@@ -537,7 +560,7 @@ repl:
      (rdd---insert-or-echo (quote ,repl) output)))
 
 (defun rdd---install-any-not-yet-installed-docs (docs)
-  "Install any not-yet-installed docs; returns a List<String> of the intalled docs."
+  "Install any not-yet-installed DOCS; return a List<String> of the intalled docs."
   (when docs
     (require 'devdocs)
     (cl-assert (stringp docs))
@@ -575,7 +598,7 @@ repl:
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
 (defun rdd---make-repl-function (repl)
-  "Constructs code denoting a function that sends a region to a REPL process"
+  "Constructs code denoting a function that sends a region to a REPL process."
   `(progn
      ;; TODO: Make a defun with a callback for repl testing a la set-process-filter.
 
@@ -668,6 +691,7 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
                       (s-trim-left (buffer-substring-no-properties region-beg region-end)))))))))
 
 (defun rdd---docs-at-point (docs)
+  "Lookup documentation at point using the given DOCS."
   ;; Test this by writing a word such as “IntStream.range(0, 44)” then M-: (rdd---docs-at-point '("openjdk~19"))
   ;; anywhere on the phrase
 
@@ -681,7 +705,9 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
 
 ;; TODO: Add docs about *REPL* buffer, its purpose, and alternatives
 (cl-defmethod rdd---make-repl-function-docstring ((cli string) (additional-remarks string))
-  "Makes the docstring for a repl function working with command CLI."
+  "Make the docstring for a repl function working with command CLI.
+
+TODO: Actually use ADDITIONAL-REMARKS."
   (s-replace-regexp "^\s+" ""
                     (format
                      "Executes the selected region, if any or otherwise the entire current line,
@@ -756,24 +782,25 @@ For example:
                (lambda (output)
                 (let ((inhibit-message t))
                   (message \"REPL⇒ %s\" output))
-                output))
-")
+                output))")
 
 (defun rdd---ignore-ansi-color-codes (string-with-codes)
-  "Ignore ANSI color codes in a string"
+  "Ignore ANSI color codes in STRING-WITH-CODES."
   (with-temp-buffer
     (insert string-with-codes)
     (ansi-color-apply-on-region (point-min) (point-max))
     (buffer-string)))
 
 (defun rdd---insertion-filter (proc string)
-  "Src: https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.html"
+  "Insert STRING into the buffer associated with PROC.
+
+Src: https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.html ."
   (when (and repl-driven-development--insert-into-repl-buffer (buffer-live-p (process-buffer proc)))
     (with-current-buffer (process-buffer proc)
       (let ((moving (= (point) (process-mark proc))))
         (save-excursion
           (goto-char (process-mark proc))
-         (let (buffer-read-only)(insert (rdd---ignore-ansi-color-codes string))) ;; Main difference
+          (let (buffer-read-only)(insert (rdd---ignore-ansi-color-codes string))) ;; Main difference
           (set-marker (process-mark proc) (point)))
         (if moving (goto-char (process-mark proc)))))))
 
