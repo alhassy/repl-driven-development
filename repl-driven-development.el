@@ -151,38 +151,42 @@
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
       (eval-buffer)
-      (progn (flycheck-list-errors) (delete-other-windows) (split-window-below 40) (other-window 1) (switch-to-buffer "*Flycheck errors*"))
-      (byte-compile-file (buffer-file-name))
-
-      (save-excursion (package-buffer-info))
+      ;; Style errors, package errors
+      (my/show-errors)
+      ;; Byte-compiles the file with all warnings enabled.
+      (elisp-lint--byte-compile  (buffer-file-name))
+      ;; Show me references to unbound symbols
       (elint-current-buffer)
 
-      ;; See errors/warnings in margin and in mode-line
-      (use-package flycheck)
-      (flycheck-mode)
-      ;; Does: (elisp-lint--checkdoc)
-      ;; Interactively fix style issues: (checkdoc)
+      (progn ;; Execute the following setup code once
+        ;; Nearly instantaneous display of tooltips.
+        (setq tooltip-delay 0)
 
-      (use-package elisp-lint)
-      (setq elisp-lint-file-validators '("byte-compile" "check-declare"
-                                         "checkdoc" "package-lint" "indent" "indent-character" "fill-column" "trailing-whitespace"))
-      (display-message-or-buffer (elisp-lint-file (buffer-file-name)))
+        (save-excursion (package-buffer-info))
 
-      (elisp-lint--byte-compile  (buffer-file-name))
-      (elisp-lint--check-declare (buffer-file-name))
-      (package-lint-current-buffer)
-      (elisp-lint--indent)
-      (elisp-lint--indent-character)
-      (elisp-lint--fill-column)
-      (elisp-lint--trailing-whitespace)
+        (use-package erefactor)
 
-      (use-package erefactor)
-      (display-fill-column-indicator-mode)
-      ;; (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
-      ;; (add-hook 'prog-mode-hook #'flycheck-mode).
+        (display-fill-column-indicator-mode)
+        ;; (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
+        ;; (add-hook 'prog-mode-hook #'flycheck-mode).
 
-      ;; Nearly instantaneous display of tooltips.
-      (setq tooltip-delay 0)
+        ;; See errors/warnings in margin and in mode-line
+        (use-package flycheck)
+        (flycheck-mode)
+        ;; Interactively fix style issues: (checkdoc)
+        ;; (elisp-lint--checkdoc)   ⇒ Does even more style checks.
+
+        ;; checker for the metadata in Emacs Lisp files which are intended to be packages.
+        ;; That metadata includes the package description, its dependencies and more.
+        (use-package flycheck-package)
+        (flycheck-package-setup)
+
+        (use-package elisp-lint)
+        ;; (elisp-lint-file (buffer-file-name)) ;; ⇒ Reports lots of issues in C-h e
+
+        (defun my/show-errors () (flycheck-list-errors) (delete-other-windows) (split-window-below 40) (other-window 1) (switch-to-buffer "*Flycheck errors*")))
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; A simple terminal REPL works as expected.
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
@@ -386,7 +390,7 @@
         java, python, terminal, javascript
 
     These are preconfigured REPLs; e.g., see the docs of
-    `repl-driven-development/preconfigured-REPL/python'.
+    function `repl-driven-development/preconfigured-REPL/python'.
 
   - PROMPT [Regular Expression]:
     What is the prompt that your REPL shows, e.g., “>”.
@@ -417,11 +421,11 @@
 
   - INPUT-REWRITE-FN [1-arg function]: A function called to rewrite text
     before submitting it to the repl. For example usage, see the docs of
-    `repl-driven-development/preconfigured-REPL/python'.
+    function `repl-driven-development/preconfigured-REPL/python'.
 
   - ECHO-REWRITE-FN [1-arg function]: A function called to rewrite repl
     output before echoing it to the user.  For example usage, see the docs
-    of `repl-driven-development/preconfigured-REPL/python'.
+    of function `repl-driven-development/preconfigured-REPL/python'.
 
     Intentionally meant for human friendly pretty-printing, not for
     a READ protocol. Those serve different goals.
