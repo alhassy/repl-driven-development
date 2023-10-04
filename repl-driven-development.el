@@ -62,7 +62,7 @@
 ;; For example, execute “C-x C-t” anywhere on each line below and see results in an
 ;; overlay, right by your cursor.
 ;;
-;;   echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: \n $(ls)"
+;;   echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: $(ls)"
 ;;
 ;;   say "My name is $(whoami) and I like Emacs"
 ;;
@@ -183,6 +183,13 @@
 
         (use-package elisp-lint)
         ;; (elisp-lint-file (buffer-file-name)) ;; ⇒ Reports lots of issues in C-h e
+
+        ;; Find errors with regex usage
+        (use-package relint)
+        (relint-current-buffer)
+
+        ;; TODO: https://github.com/alphapapa/emacs-package-dev-handbook#packaging
+        ;; TODO: https://github.com/emacs-eldev/eldev
 
         (defun my/show-errors () (flycheck-list-errors) (delete-other-windows) (split-window-below 40) (other-window 1) (switch-to-buffer "*Flycheck errors*")))
 
