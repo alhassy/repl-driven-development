@@ -4,7 +4,7 @@
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
 ;; Version: 1.0.6
-;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "27.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
+;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
 ;; Homepage: http://alhassy.com/repl-driven-development
@@ -190,7 +190,7 @@
 
       ;; A simple terminal REPL works as expected.
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
-      echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: \n $(ls)"
+      echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: $(ls)"
 
       ;; Insert the result of the above shell command with C-u C-x C-t.
 
@@ -390,7 +390,7 @@
         java, python, terminal, javascript
 
     These are preconfigured REPLs; e.g., see the docs of
-    function `repl-driven-development/preconfigured-REPL/python'.
+    function `repl-driven-development--preconfigured-python-REPL'.
 
   - PROMPT [Regular Expression]:
     What is the prompt that your REPL shows, e.g., “>”.
@@ -421,11 +421,11 @@
 
   - INPUT-REWRITE-FN [1-arg function]: A function called to rewrite text
     before submitting it to the repl. For example usage, see the docs of
-    function `repl-driven-development/preconfigured-REPL/python'.
+    function `repl-driven-development--preconfigured-python-REPL'.
 
   - ECHO-REWRITE-FN [1-arg function]: A function called to rewrite repl
     output before echoing it to the user.  For example usage, see the docs
-    of function `repl-driven-development/preconfigured-REPL/python'.
+    of function `repl-driven-development--preconfigured-python-REPL'.
 
     Intentionally meant for human friendly pretty-printing, not for
     a READ protocol. Those serve different goals.
@@ -459,7 +459,7 @@
                                              :prompt ">" :input-rewrite-fn ,strip-out-C-style-comments&newlines))
       ('terminal `(repl-driven-development ,keys "bash" :name 'repl/terminal
                                            :prompt "^[^ ]*\\$"))
-      ('python `(repl-driven-development/preconfigured-REPL/python ,keys))
+      ('python `(repl-driven-development--preconfigured-python-REPL ,keys))
       (_ `(-let* (((repl . args) (s-split " " ,cli)))
             ;; (repl-fun-name string)
             (setf (rdd@ repl cmd) repl) ;; String
@@ -492,20 +492,20 @@
               (aset buffer-display-table ?\^M [])
               (setq buffer-read-only t))
 
-            (setq docs (rdd---install-any-not-yet-installed-docs ,docs))
-            (eval (rdd---make-repl-function repl))
+            (setq docs (repl-driven-development--install-any-not-yet-installed-docs ,docs))
+            (eval (repl-driven-development--make-repl-function repl))
 
             (process-send-string (rdd@ repl process) ,init)
             (process-send-string (rdd@ repl process) "\n")
 
             ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-            (set-process-filter (rdd@ repl process) (rdd---main-callback (intern repl)))
+            (set-process-filter (rdd@ repl process) (repl-driven-development--main-callback (intern repl)))
 
             ;; Return the REPL process to the user.
             (rdd@ repl process))))))
 
 
-(defun repl-driven-development/preconfigured-REPL/python (keys)
+(defun repl-driven-development--preconfigured-python-REPL (keys)
   "A Python REPL configuration, bound to keybinding KEYS.
 
 This configuration fixes the following shortcomings of the default Python CLI
@@ -542,13 +542,13 @@ repl:
                               (t result))))))
 
 
-(defun rdd---main-callback (repl)
+(defun repl-driven-development--main-callback (repl)
   "Return the callback that works on REPL."
   `(lambda (process output)
 
      ;; The *REPL* buffer shows things exactly as they'd look like
      ;; in a standard interaction in the terminal.
-     (rdd---insertion-filter process output)
+     (repl-driven-development--insertion-filter process output)
 
      ;; This is done to provide a richer, friendlier, interaction.
      ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
@@ -557,13 +557,12 @@ repl:
 
      ;; thread `output' through output hooks
      ;; i.e., run all hooks on REPL output, each possibly modifying output
-     (require 'cl)
-     (cl-loop for fun in repl-driven-development/output-hook
+     (cl-loop for fun in repl-driven-development-output-hook
               do (setq output (funcall fun output)))
 
-     (rdd---insert-or-echo (quote ,repl) output)))
+     (repl-driven-development--insert-or-echo (quote ,repl) output)))
 
-(defun rdd---install-any-not-yet-installed-docs (docs)
+(defun repl-driven-development--install-any-not-yet-installed-docs (docs)
   "Install any not-yet-installed DOCS; return a List<String> of the intalled docs."
   (when docs
     (require 'devdocs)
@@ -574,7 +573,7 @@ repl:
       (--map (unless (member it installed) (devdocs-install (list (cons 'slug it)))) docs))
     docs)
 
-  (defun rdd---insert-or-echo (repl output)
+  (defun repl-driven-development--insert-or-echo (repl output)
     "If there's a C-u, then insert the output; else echo it in overlay"
     (cl-assert (stringp output))
     (pcase current-prefix-arg
@@ -586,7 +585,7 @@ repl:
        ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
        ;; it does some sexp look-about, which may not mix well with, say, JS
        ;; arrow functions, so we freeze such movements, locally. ﴿
-       (setq output (apply (rdd@ repl echo-rewrite-fn) (list (rdd---ignore-ansi-color-codes output))))
+       (setq output (apply (rdd@ repl echo-rewrite-fn) (list (repl-driven-development--ignore-ansi-color-codes output))))
        (unless (s-blank? (s-trim output))
          (unless  (equal output (s-trim (rdd@ repl current-input)))
            (mapcar #'delete-overlay (overlays-at (rdd@ repl current-input/start)))
@@ -597,11 +596,11 @@ repl:
        (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
          (eros--make-result-overlay output
            :format  " ⮕ %s"
-           :duration repl-driven-development/echo-duration))))))
+           :duration repl-driven-development-echo-duration))))))
 
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
-(defun rdd---make-repl-function (repl)
+(defun repl-driven-development--make-repl-function (repl)
   "Constructs code denoting a function that sends a region to a REPL process."
   `(progn
      ;; TODO: Make a defun with a callback for repl testing a la set-process-filter.
@@ -631,7 +630,7 @@ Invoke once to go to the REPL buffer; invoke again to jump back to your original
      (defun ,(intern (format "%s/docs-at-point" (rdd@ repl fun-name))) ()
        "Documentation at point."
        (interactive)
-       (rdd---docs-at-point (quote ,(rdd@ repl docs))))
+       (repl-driven-development--docs-at-point (quote ,(rdd@ repl docs))))
 
      (defun ,(intern (format "%s/read" (rdd@ repl fun-name))) (str)
        "Read STR into code executable by the REPL.
@@ -694,9 +693,9 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
                      (,(intern (format "%s/submit" (rdd@ repl fun-name)))
                       (s-trim-left (buffer-substring-no-properties region-beg region-end)))))))))
 
-(defun rdd---docs-at-point (docs)
+(defun repl-driven-development--docs-at-point (docs)
   "Lookup documentation at point using the given DOCS."
-  ;; Test this by writing a word such as “IntStream.range(0, 44)” then M-: (rdd---docs-at-point '("openjdk~19"))
+  ;; Test this by writing a word such as “IntStream.range(0, 44)” then M-: (repl-driven-development--docs-at-point '("openjdk~19"))
   ;; anywhere on the phrase
 
   ;; devdocs-lookup will ask to setup current docs when there's a current-prefix, so we null it.
@@ -718,7 +717,7 @@ TODO: Actually use ADDITIONAL-REMARKS."
     and evaluates it with the command-line tool “%s”.
 
     Output is shown as an overlay at the current cursor position.
-    It is shown for `repl-driven-development/echo-duration' many seconds.
+    It is shown for `repl-driven-development-echo-duration' many seconds.
 
     ##### C-u Prefix: Insert result
 
@@ -774,7 +773,7 @@ TODO: Actually use ADDITIONAL-REMARKS."
                      (format "repl/%s/restart" cli)
                      (format "repl/%s/submit" cli))))
 
-(defvar repl-driven-development/output-hook nil
+(defvar repl-driven-development-output-hook nil
   "A list of functions to execute after REPL output has been computed.
 
 Each function consumes a single argument: The output result, as a string.
@@ -782,20 +781,20 @@ Each function consumes a single argument: The output result, as a string.
 For example:
 
      ;; I'd like “C-h e” to show eval result ---just as “C-x C-e” does.
-     (add-hook 'repl-driven-development/output-hook
+     (add-hook 'repl-driven-development-output-hook
                (lambda (output)
                 (let ((inhibit-message t))
                   (message \"REPL⇒ %s\" output))
                 output))")
 
-(defun rdd---ignore-ansi-color-codes (string-with-codes)
+(defun repl-driven-development--ignore-ansi-color-codes (string-with-codes)
   "Ignore ANSI color codes in STRING-WITH-CODES."
   (with-temp-buffer
     (insert string-with-codes)
     (ansi-color-apply-on-region (point-min) (point-max))
     (buffer-string)))
 
-(defun rdd---insertion-filter (proc string)
+(defun repl-driven-development--insertion-filter (proc string)
   "Insert STRING into the buffer associated with PROC.
 
 Src: https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.html ."
@@ -804,11 +803,11 @@ Src: https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.
       (let ((moving (= (point) (process-mark proc))))
         (save-excursion
           (goto-char (process-mark proc))
-          (let (buffer-read-only)(insert (rdd---ignore-ansi-color-codes string))) ;; Main difference
+          (let (buffer-read-only)(insert (repl-driven-development--ignore-ansi-color-codes string))) ;; Main difference
           (set-marker (process-mark proc) (point)))
         (if moving (goto-char (process-mark proc)))))))
 
-(defvar repl-driven-development/echo-duration 5)
+(defvar repl-driven-development-echo-duration 5)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
