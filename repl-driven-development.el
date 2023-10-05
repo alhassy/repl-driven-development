@@ -4,7 +4,7 @@
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
 ;; Version: 1.0.6
-;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
+;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
 ;; Homepage: http://alhassy.com/repl-driven-development
@@ -290,6 +290,7 @@
 (require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
 (require 'eros)            ;; Simple Emacs Overlays
 (require 'bind-key)        ;; Bind keys
+(require 'lf)              ;; Template strings with lf-string
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
@@ -576,7 +577,7 @@ repl:
     (cl-assert (stringp docs))
     (setq docs (--reject (s-blank? it) (s-split " " docs)))
     (cl-assert (listp docs))
-    (-let [installed (mapcar #'f-base (f-entries devdocs-data-dir))]
+    (-let [installed (mapc #'f-base (f-entries devdocs-data-dir))]
       (--map (unless (member it installed) (devdocs-install (list (cons 'slug it)))) docs))
     docs)
 
@@ -714,14 +715,14 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
       (call-interactively #'devdocs-lookup))))
 
 ;; TODO: Add docs about *REPL* buffer, its purpose, and alternatives
-(cl-defmethod rdd---make-repl-function-docstring ((cli string) (additional-remarks string))
+(cl-defmethod rdd---make-repl-function-docstring
+  ((cli string) (additional-remarks string))
   "Make the docstring for a repl function working with command CLI.
 
 TODO: Actually use ADDITIONAL-REMARKS."
-  (s-replace-regexp "^\s+" ""
-                    (format
-                     "Executes the selected region, if any or otherwise the entire current line,
-    and evaluates it with the command-line tool “%s”.
+  (lf-string
+   "Executes the selected region, if any or otherwise the entire current line,
+    and evaluates it with the command-line tool “${'cli}”.
 
     Output is shown as an overlay at the current cursor position.
     It is shown for `repl-driven-development-echo-duration' many seconds.
@@ -731,12 +732,12 @@ TODO: Actually use ADDITIONAL-REMARKS."
     With a “C-u” prefix, the output is inserted at point
     (and not echoed in an overlay).
 
-    Since %s may pretty-print its output, inserting it may result in
+    Since ${cli} may pretty-print its output, inserting it may result in
     non-executable code. If you want executable code, you must specify
-    how pretty-printed output must be converted into %s-executable code.
-    Do so by redefining `%s'.
+    how pretty-printed output must be converted into ${cli}-executable code.
+                    Do so by redefining `repl/${cli}/read'.
 
-    ##### C-u C-u Prefix: Documentation via `%s'
+    ##### C-u C-u Prefix: Documentation via `repl/${cli}/docs-at-point'
 
     With a “C-u C-u” prefix, documentation is looked-up for the word at point.
 
@@ -744,13 +745,13 @@ TODO: Actually use ADDITIONAL-REMARKS."
     example uses as well. Visit https://devdocs.io/ to see the list of documented
     languages and libraries.
 
-    ##### “C-u 0” Prefix: See associated buffer via `%s'
+    ##### “C-u 0” Prefix: See associated buffer via `repl/${cli}/jump-to-process-buffer'
 
     Sometimes it may be useful to look at a large output in a dedicated buffer.
     However, the output of a command is also attached to the input via a tooltip:
     Hover to see it! See also `tooltip-delay'.
 
-    ##### “C-u -1” Prefix: Restart REPL via `%s'
+    ##### “C-u -1” Prefix: Restart REPL via `repl/${cli}/restart'
 
     In the event you've messed-up your REPL, starting from a blank slate may be
     helpful.
@@ -762,23 +763,14 @@ TODO: Actually use ADDITIONAL-REMARKS."
     queued for evaluation. For example, evaluating a sleep command for 3 seconds
     does not block Emacs.
 
-    From Lisp, consider using `%s'.
+    From Lisp, consider using `repl/${cli}/submit'.
 
     ##### See also
 
     See `repl-driven-development' for more useful docs.
 
     See www.alhassy.com/repl-driven-development to learn more about RDD and see
-    examples and many gifs.
-"
-                     cli
-                     cli
-                     cli
-                     (format "repl/%s/read" cli)
-                     (format "repl/%s/docs-at-point" cli)
-                     (format "repl/%s/jump-to-process-buffer" cli)
-                     (format "repl/%s/restart" cli)
-                     (format "repl/%s/submit" cli))))
+    examples and many gifs."))
 
 (defvar repl-driven-development-output-hook nil
   "A list of functions to execute after REPL output has been computed.
@@ -787,7 +779,7 @@ Each function consumes a single argument: The output result, as a string.
 
 For example:
 
-     ;; I'd like “C-h e” to show eval result ---just as “C-x C-e” does.
+     ;; I'd like “C­h e” to show eval result ---just as “C­x C­e” does.
      (add-hook 'repl-driven-development-output-hook
                (lambda (output)
                 (let ((inhibit-message t))
@@ -804,13 +796,17 @@ For example:
 (defun repl-driven-development--insertion-filter (proc string)
   "Insert STRING into the buffer associated with PROC.
 
-Src: https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.html ."
-  (when (and repl-driven-development--insert-into-repl-buffer (buffer-live-p (process-buffer proc)))
+Source:
+https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.html."
+  (when (and repl-driven-development--insert-into-repl-buffer
+             (buffer-live-p (process-buffer proc)))
     (with-current-buffer (process-buffer proc)
       (let ((moving (= (point) (process-mark proc))))
         (save-excursion
           (goto-char (process-mark proc))
-          (let (buffer-read-only)(insert (repl-driven-development--ignore-ansi-color-codes string))) ;; Main difference
+          (let (buffer-read-only)
+            ;; Main difference
+            (insert (repl-driven-development--ignore-ansi-color-codes string)))
           (set-marker (process-mark proc) (point)))
         (if moving (goto-char (process-mark proc)))))))
 
