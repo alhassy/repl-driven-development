@@ -1,9 +1,9 @@
-;;; repl-driven-development.el --- Send arbitrary code to a REPL in the background  -*- lexical-binding: t; -*-
+;;; repl-driven-development.el --- Send arbitrary code to a REPL in the background
 
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.6
+;; Version: 1.0.7
 ;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -300,6 +300,7 @@
 (require 'eros)            ;; Simple Emacs Overlays
 (require 'bind-key)        ;; Bind keys
 (require 'lf)              ;; Template strings with lf-string
+;; [lf requires nil lexical binding!]
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
@@ -489,7 +490,8 @@
             ;; (repl-fun-name string)
             (setf (rdd@ repl cmd) repl) ;; String
             (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
-            (setf (rdd@ repl keybinding) ,keys) ;; String
+            (setf (rdd@ repl keybinding)
+                  (s-join " " (mapcar #'pp-to-string ,keys))) ;; String
             ;; String: Space separated list
             (setf (rdd@ repl docs) (s-join " " ,docs))
             ;; Used to avoid scenarios where input is echoed thereby
@@ -730,9 +732,9 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
          (insert (rdd@ ,repl output))))
 
      (bind-key*
-      (s-join " " (mapcar #'pp-to-string (rdd@ ,repl keybinding)))
+      (rdd@ ,repl keybinding)
       (defun ,(rdd@ repl fun-name) (region-beg region-end)
-        ,(rdd---make-repl-function-docstring (rdd@ repl cmd) "")
+        ,(rdd---make-repl-function-docstring repl)
         (interactive "r")
 
         (require 'pulsar)
@@ -785,29 +787,30 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
 
 
 ;; TODO: Add docs about *REPL* buffer, its purpose, and alternatives
-(cl-defmethod rdd---make-repl-function-docstring
-  ((cli string) (additional-remarks string))
-  "Make the docstring for a repl function working with command CLI.
-
-TODO: Actually use ADDITIONAL-REMARKS."
-  (lf-string
-   "Executes the selected region, if any or otherwise the entire current line,
-    and evaluates it with the command-line tool “${'cli}”.
+(defun rdd---make-repl-function-docstring (repl)
+  "Make the docstring for a repl function working with command CLI."
+  (setq repl (rdd@ repl cmd))
+  (-let [keys (rdd@ repl keybinding)]
+    (lf-string
+     "Executes the selected region, if any or otherwise the entire current line,
+    and evaluates it with the command-line tool “${repl}”.
 
     Output is shown as an overlay at the current cursor position.
     It is shown for `repl-driven-development-echo-duration' many seconds.
 
-    ##### C-u Prefix: Insert result
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                       ﴾ C-u ${keys}  ≈  Insert result ﴿
 
     With a “C-u” prefix, the output is inserted at point
     (and not echoed in an overlay).
 
-    Since ${cli} may pretty-print its output, inserting it may result in
+    Since ${repl} may pretty-print its output, inserting it may result in
     non-executable code. If you want executable code, you must specify
-    how pretty-printed output must be converted into ${cli}-executable code.
-                    Do so by redefining `repl/${cli}/read'.
+    how pretty-printed output must be converted into ${repl}-executable code.
+    Do so by redefining `repl/${repl}/read'.
 
-    ##### C-u C-u Prefix: Documentation via `repl/${cli}/docs-at-point'
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+              ﴾ C-u C-u ${keys}  ≈  `repl/${repl}/docs-at-point' ﴿
 
     With a “C-u C-u” prefix, documentation is looked-up for the word at point.
 
@@ -815,33 +818,37 @@ TODO: Actually use ADDITIONAL-REMARKS."
     example uses as well. Visit https://devdocs.io/ to see the list of documented
     languages and libraries.
 
-    ##### “C-u 0” Prefix: See associated buffer via \
-    `repl/${cli}/jump-to-process-buffer'
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+          ﴾ C-u 0 ${keys}   ≈  `repl/${repl}/jump-to-process-buffer' ﴿
 
     Sometimes it may be useful to look at a large output in a dedicated buffer.
     However, the output of a command is also attached to the input via a
     tooltip: Hover to see it! See also `tooltip-delay'.
 
-    ##### “C-u -1” Prefix: Restart REPL via `repl/${cli}/restart'
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                 ﴾ C-u -1 ${keys}  ≈  `repl/${repl}/restart' ﴿
 
     In the event you've messed-up your REPL, starting from a blank slate may be
     helpful.
 
-    ##### Implementation Notes
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                            ﴾ Implementation Notes ﴿
 
     The interactive method is asynchronous: Whenever you send text for
     evaluation, you immediately regain control in Emacs; you may send more text
     and it will be queued for evaluation. For example, evaluating a sleep
     command for 3 seconds does not block Emacs.
 
-    From Lisp, consider using `repl/${cli}/submit'.
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+    From Lisp, consider using `repl/${repl}/submit'.
 
-    ##### See also
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                                  ﴾ See also ﴿
 
     See `repl-driven-development' for more useful docs.
 
     See www.alhassy.com/repl-driven-development to learn more about RDD and see
-    examples and many gifs."))
+    examples and many gifs.")))
 
 (defvar repl-driven-development-output-hook nil
   "A list of functions to execute after REPL output has been computed.
