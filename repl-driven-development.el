@@ -62,7 +62,7 @@
 ;; For example, execute “C-x C-t” anywhere on each line below and see results in an
 ;; overlay, right by your cursor.
 ;;
-;;   echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: $(ls)"
+;;   echo "It is $(date) and I am at $PWD, my name is $(whoami) and I have: $(ls)"
 ;;
 ;;   say "My name is $(whoami) and I like Emacs"
 ;;
@@ -134,7 +134,8 @@
 ;;  // See a list of 23 numbers, which are attached as a tooltip to this text.
 ;;  IntStream.range(0, 23).forEach(x -> System.out.println(x))
 ;;
-;; For more documentation, and examples, see http://alhassy.com/repl-driven-development
+;; For more documentation, and examples,
+;; see http://alhassy.com/repl-driven-development
 ;;
 ;;; Code:
 
@@ -146,7 +147,7 @@
 ;; TODO: Add mini-tutorial, from pkg docs, to Github README.
 ;; TODO: Implement Read Protocol for Java.
 ;; TODO[Low Priority]: Implement pretty printing for Python.
-;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (e.g., JSON.stringify({}, null, 2))
+;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (eg JSON.parse)
 
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
@@ -176,28 +177,36 @@
         ;; Interactively fix style issues: (checkdoc)
         ;; (elisp-lint--checkdoc)   ⇒ Does even more style checks.
 
-        ;; checker for the metadata in Emacs Lisp files which are intended to be packages.
-        ;; That metadata includes the package description, its dependencies and more.
+        ;; checker for the metadata in Emacs Lisp files which are intended to be
+        ;; packages. That metadata includes the package description, its
+        ;; dependencies and more.
         (use-package flycheck-package)
         (flycheck-package-setup)
 
         (use-package elisp-lint)
-        ;; (elisp-lint-file (buffer-file-name)) ;; ⇒ Reports lots of issues in C-h e
+        ;; (elisp-lint-file (buffer-file-name))
+        ;; ⇒ Reports lots of issues in C-h e
 
         ;; Find errors with regex usage
         (use-package relint)
         (relint-current-buffer)
 
-        ;; TODO: https://github.com/alphapapa/emacs-package-dev-handbook#packaging
-        ;; TODO: https://github.com/emacs-eldev/eldev
+        ;; TODO: Read
+        ;; https://github.com/alphapapa/emacs-package-dev-handbook#packaging
+        ;; https://github.com/emacs-eldev/eldev
 
-        (defun my/show-errors () (flycheck-list-errors) (delete-other-windows) (split-window-below 40) (other-window 1) (switch-to-buffer "*Flycheck errors*")))
+        (defun my/show-errors ()
+          (flycheck-list-errors)
+          (delete-other-windows)
+          (split-window-below 40)
+          (other-window 1)
+          (switch-to-buffer "*Flycheck errors*")))
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; A simple terminal REPL works as expected.
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
-      echo "It is $(date) and I am at $(pwd), my name is $(whoami) and I have: $(ls)"
+      echo -e "$(whoami): On $(date), I sit at $(pwd) pondering ... \n $(ls)"
 
       ;; Insert the result of the above shell command with C-u C-x C-t.
 
@@ -215,7 +224,7 @@
       (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)")
 
       ;; We can get rid of the prompt at the end with :prompt
-      (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)" :prompt "^[^ ]*\\$")
+      (repl-driven-development [C-x C-t] "bash" :prompt "^[^ ]*\\$")
 
       ;; We can change the blinking colours via rdd@.
       (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
@@ -226,8 +235,8 @@
 
       ;; We can use a preconfigured REPL.
       ;;
-      ;; Notice associated buffer's name involves only the command "jshell", not the args.
-      ;; See it via C-u 0 C-x C-j.
+      ;; Notice associated buffer's name involves only the command "jshell",
+      ;; not the args. See it via C-u 0 C-x C-j.
       (repl-driven-development [C-x C-j] java)
       ;;
       ;; This allows us to submit multi-line input seamlessly.
@@ -250,38 +259,38 @@
       (repl-driven-development  [C-x C-p] python)
       ;; Send each line, one at a time.
       "
-  1 + 2 * 3
+      1 + 2 * 3
 
-  def foo(x): return x*x
+      def foo(x): return x*x
 
-  foo(5)
+      foo(5)
 
-  list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
+      list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
 
-  # (Above shows Result Truncated due to my use of eros, which has this limit.
-  # TODO[Low Priority]: Fix this.)
-  #
-  # We can do multi-line def ---The quotes are to allow me to indent,
-  # otherwise my aggressive-formatter strips the whitespace away.
+      # (Above shows Result Truncated due to my use of eros, which has this limit.
+      # TODO[Low Priority]: Fix this.)
+      #
+      # We can do multi-line def ---The quotes are to allow me to indent,
+      # otherwise my aggressive-formatter strips the whitespace away.
 
-  def square(x):
-     return x * x
+      def square(x):
+      return x * x
 
-  square(5)
+      square(5)
 
-# Likewise for class-es:
+      # Likewise for class-es:
 
-    class MyClass():
-        i = 12345
+      class MyClass():
+      i = 12345
 
-        def f(self):
-            return 'hello world'
+      def f(self):
+      return 'hello world'
 
 
       x = MyClass()
       x.i
       x.f()
-"
+      "
       ;; Notice that the code is identend nicely.
       )
 
@@ -305,7 +314,7 @@
       (rdd@ \"foo\" name)                ;; ⇒ nil
       (setf (rdd@ \"foo\" name) 'Jasim)
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
-  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+      `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
 
 ;;;###autoload
 (cl-defmacro repl-driven-development
@@ -389,8 +398,8 @@
   - KEYS [Vector]: A vector such as [C-x C-p] that declares the keybindings for
     the new REPL evaluator.
 
-  - CLI [String|Symbol]: A string denoting the terminal command to start your repl;
-    you may need an “-i” flag to force it to be interactive even though
+  - CLI [String|Symbol]: A string denoting the terminal command to start your
+    repl; you may need an “-i” flag to force it to be interactive even though
     we use it from a child process rather than a top-level shell.
 
     This argument may also be one of the following unquoted symbols:
@@ -458,14 +467,22 @@
                     (s-replace-regexp "\n" "")))]
     (pcase cli
       ('java
-       ;; JShell does semicolon insertion eagerly, so it things the following are three separate
-       ;; expressions! We can fix this by removing new lines.
-       `(repl-driven-development ,keys "jshell" :name 'repl/java :prompt "jshell>"
-                                 :input-rewrite-fn ,strip-out-C-style-comments&newlines))
+       ;; JShell does semicolon insertion eagerly, so it things the following
+       ;; are three separate expressions! We can fix this by removing new lines.
+       `(repl-driven-development ,keys "jshell"
+                                 :name 'repl/java
+                                 :prompt "jshell>"
+                                 :input-rewrite-fn
+                                 ,strip-out-C-style-comments&newlines))
       ;; Likewise JS does eager semicolon insertion.
-      ('javascript `(repl-driven-development ,keys "node" :name 'repl/javascript
-                                             :prompt ">" :input-rewrite-fn ,strip-out-C-style-comments&newlines))
-      ('terminal `(repl-driven-development ,keys "bash" :name 'repl/terminal
+      ('javascript
+       `(repl-driven-development ,keys "node"
+                                 :name 'repl/javascript
+                                 :prompt ">"
+                                 :input-rewrite-fn
+                                 ,strip-out-C-style-comments&newlines))
+      ('terminal `(repl-driven-development ,keys "bash"
+                                           :name 'repl/terminal
                                            :prompt "^[^ ]*\\$"))
       ('python `(repl-driven-development--preconfigured-python-REPL ,keys))
       (_ `(-let* (((repl . args) (s-split " " ,cli)))
@@ -473,8 +490,10 @@
             (setf (rdd@ repl cmd) repl) ;; String
             (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
             (setf (rdd@ repl keybinding) ,keys) ;; String
-            (setf (rdd@ repl docs) (s-join " " ,docs)) ;; String: Space separated list
-            ;; Used to avoid scenarios where input is echoed thereby accidentally treating it as a repl output
+            ;; String: Space separated list
+            (setf (rdd@ repl docs) (s-join " " ,docs))
+            ;; Used to avoid scenarios where input is echoed thereby
+            ;; accidentally treating it as a repl output
             (setf (rdd@ repl current-input) "") ;; String
             (setf (rdd@ repl current-input/start) 0)
             (setf (rdd@ repl current-input/end) 0)
@@ -489,7 +508,8 @@
             (cl-assert (stringp ,init))
 
             (setf (rdd@ repl blink) ,blink)
-            ;; Identifier "repl-driven-development" is made unique by start-process.
+            ;; Identifier "repl-driven-development" is made unique by
+            ;; start-process.
             (setf (rdd@ repl process)
                   (apply #'start-process "repl-driven-development"
                          (format "*REPL/%s*" repl) repl args))
@@ -500,14 +520,19 @@
               (aset buffer-display-table ?\^M [])
               (setq buffer-read-only t))
 
-            (setq docs (repl-driven-development--install-any-not-yet-installed-docs ,docs))
+            (setq docs
+                  (repl-driven-development--install-any-not-yet-installed-docs
+                   ,docs))
             (eval (repl-driven-development--make-repl-function repl))
 
             (process-send-string (rdd@ repl process) ,init)
             (process-send-string (rdd@ repl process) "\n")
 
-            ;; Callback: Write the actual output to the REPL buffer and emit overlay.
-            (set-process-filter (rdd@ repl process) (repl-driven-development--main-callback (intern repl)))
+            ;; Callback: Write the actual output to the REPL buffer
+            ;; and emit overlay.
+            (set-process-filter
+             (rdd@ repl process)
+             (repl-driven-development--main-callback (intern repl)))
 
             ;; Return the REPL process to the user.
             (rdd@ repl process))))))
@@ -536,18 +561,22 @@ repl:
    :prompt ">>>"
    :name 'repl/python
    :blink 'pulsar-red
-   ;; Remove empty lines: In the middle of a def|class, they abruptly terminate the def|class!
+   ;; Remove empty lines: In the middle of a def|class, they abruptly terminate
+   ;; the def|class!
    :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
-   ;; For some reason, Python (in Emacs shells) emits the input as part of the output, so let's chop it off.
-   ;; Default Python repl emits nothing on def|class declarations, let's change that.
-   :echo-rewrite-fn (lambda (echo)
-                      (let* ((input  (rdd@ "python3" current-input))
-                             (result (s-chop-prefix input echo)))
-                        (cond ((s-starts-with? "def" input)
-                               (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
-                              ((s-starts-with? "class" input)
-                               (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
-                              (t result))))))
+   ;; For some reason, Python (in Emacs shells) emits the input as part of the
+   ;; output, so let's chop it off.
+   ;; Default Python repl emits nothing on def|class declarations,
+   ;; let's change that.
+   :echo-rewrite-fn
+   (lambda (echo)
+     (let* ((input  (rdd@ "python3" current-input))
+            (result (s-chop-prefix input echo)))
+       (cond ((s-starts-with? "def" input)
+              (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
+             ((s-starts-with? "class" input)
+              (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
+             (t result))))))
 
 
 (defun repl-driven-development--main-callback (repl)
@@ -559,8 +588,10 @@ repl:
      (repl-driven-development--insertion-filter process output)
 
      ;; This is done to provide a richer, friendlier, interaction.
-     ;; ^M at the end of line in Emacs is indicating a carriage return (\r) followed by a line feed (\n).
-     (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) "" (s-replace "\r\n" "" output))))
+     ;; ^M at the end of line in Emacs is indicating a carriage return (\r)
+     ;; followed by a line feed (\n).
+     (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) ""
+                                            (s-replace "\r\n" "" output))))
      (setf (rdd@ (quote ,repl) output) output)
 
      ;; thread `output' through output hooks
@@ -571,14 +602,16 @@ repl:
      (repl-driven-development--insert-or-echo (quote ,repl) output)))
 
 (defun repl-driven-development--install-any-not-yet-installed-docs (docs)
-  "Install any not-yet-installed DOCS; return a List<String> of the intalled docs."
+  "Install any not-yet-installed DOCS; return a List<String> of the installed \
+docs."
   (when docs
     (require 'devdocs)
     (cl-assert (stringp docs))
     (setq docs (--reject (s-blank? it) (s-split " " docs)))
     (cl-assert (listp docs))
     (-let [installed (mapc #'f-base (f-entries devdocs-data-dir))]
-      (--map (unless (member it installed) (devdocs-install (list (cons 'slug it)))) docs))
+      (--map (unless (member it installed)
+               (devdocs-install (list (cons 'slug it)))) docs))
     docs)
 
   (defun repl-driven-development--insert-or-echo (repl output)
@@ -586,18 +619,25 @@ repl:
     (cl-assert (stringp output))
     (pcase current-prefix-arg
       ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
-              (insert " " (funcall (intern (format "repl/%s/read" (rdd@ repl cmd))) output)))) ;; (funcall (intern "repl/node/read") "hola")
+              (insert " " (funcall
+                           (intern (format "repl/%s/read"
+                                           (rdd@ repl cmd))) output))))
       ;; All other prefixes are handled by repl-fun-name, above.
       (_
        ;; Show output as an overlay at the current cursor position
        ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
        ;; it does some sexp look-about, which may not mix well with, say, JS
        ;; arrow functions, so we freeze such movements, locally. ﴿
-       (setq output (apply (rdd@ repl echo-rewrite-fn) (list (repl-driven-development--ignore-ansi-color-codes output))))
+       (setq output
+             (apply (rdd@ repl echo-rewrite-fn)
+                    (list (repl-driven-development--ignore-ansi-color-codes
+                           output))))
        (unless (s-blank? (s-trim output))
          (unless  (equal output (s-trim (rdd@ repl current-input)))
-           (mapcar #'delete-overlay (overlays-at (rdd@ repl current-input/start)))
-           (let ((overlay (make-overlay (rdd@ repl current-input/start) (rdd@ repl current-input/end))))
+           (mapcar #'delete-overlay
+                   (overlays-at (rdd@ repl current-input/start)))
+           (let ((overlay (make-overlay (rdd@ repl current-input/start)
+                                        (rdd@ repl current-input/end))))
              (overlay-put overlay 'help-echo output))))
        (thread-yield)
        (require 'eros)
@@ -608,22 +648,34 @@ repl:
 
 (defvar repl-driven-development--insert-into-repl-buffer t)
 
+
 (defun repl-driven-development--make-repl-function (repl)
   "Constructs code denoting a function that sends a region to a REPL process."
   `(progn
-     ;; TODO: Make a defun with a callback for repl testing a la set-process-filter.
+     ;; TODO: Make a defun with a callback for repl testing a la
+     ;; set-process-filter.
 
-     (defun ,(intern (format "%s/jump-to-process-buffer" (rdd@ repl fun-name))) ()
-       "Toggle to the buffer associated with this REPL process; see a log of your submissions.
+     (defun ,(intern (format "%s/jump-to-process-buffer" (rdd@ repl fun-name)))
+         ()
+       "Toggle to the buffer associated with this REPL process; see a log of \
+your submissions.
 
-Invoke once to go to the REPL buffer; invoke again to jump back to your original buffer."
+Invoke once to go to the REPL buffer; invoke again to jump back to your \
+original buffer."
        (interactive)
        (if (equal (current-buffer) (process-buffer (rdd@ ,repl process)))
-           (switch-to-buffer (get (quote ,(intern (format "%s/jump-to-process-buffer" (rdd@ repl fun-name)))) 'location))
-         (setf (get (quote ,(intern (format "%s/jump-to-process-buffer" (rdd@ repl fun-name)))) 'location) (current-buffer))
+           (switch-to-buffer
+            (get (quote ,(intern (format "%s/jump-to-process-buffer"
+                                         (rdd@ repl fun-name))))
+                 'location))
+         (setf (get (quote ,(intern (format "%s/jump-to-process-buffer"
+                                            (rdd@ repl fun-name))))
+                    'location)
+               (current-buffer))
          (switch-to-buffer (process-buffer (rdd@ ,repl process)))))
 
-     ;; restart repl, [then send to repl --does not work since REPLs take a sec to load. That's OK, not a deal-breaker!]
+     ;; restart repl, [then send to repl --does not work since REPLs take a sec
+     ;; to load. That's OK, not a deal-breaker!]
      (defun ,(intern (format "%s/restart" (rdd@ repl fun-name))) ()
        "Restart the REPL process."
        (interactive)
@@ -662,57 +714,75 @@ YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
 
 To submit a region, use `%s'." (rdd@ repl fun-name))
        (setf (rdd@ ,repl current-input) str)
-       (process-send-string (rdd@ ,repl process) (apply (rdd@ ,repl input-rewrite-fn) (list str)))
+       (process-send-string (rdd@ ,repl process)
+                            (apply (rdd@ ,repl input-rewrite-fn) (list str)))
        (process-send-string (rdd@ ,repl process) "\n"))
 
-     (defun ,(intern (format "%s/display-most-recent-result" (rdd@ repl fun-name))) ()
-       "Show most recent REPL result. With C-u prefix, result is shown in its own buffer."
+     (defun
+         ,(intern (format "%s/display-most-recent-result" (rdd@ repl fun-name)))
+         ()
+       "Show most recent REPL result. With C-u prefix, result is shown in its \
+        own buffer."
        (interactive)
        (if (not current-prefix-arg)
            (display-message-or-buffer (rdd@ ,repl output))
          (switch-to-buffer (format "*REPL/%s/most-recent-result*" ,repl))
          (insert (rdd@ ,repl output))))
 
-     (bind-key* (s-join " " (mapcar #'pp-to-string (rdd@ ,repl keybinding)))
-                (defun ,(rdd@ repl fun-name) (region-beg region-end)
-                  ,(rdd---make-repl-function-docstring (rdd@ repl cmd) "")
-                  (interactive "r")
+     (bind-key*
+      (s-join " " (mapcar #'pp-to-string (rdd@ ,repl keybinding)))
+      (defun ,(rdd@ repl fun-name) (region-beg region-end)
+        ,(rdd---make-repl-function-docstring (rdd@ repl cmd) "")
+        (interactive "r")
 
-                  (require 'pulsar)
-                  (-let [pulsar-face (rdd@ ,repl blink)]
-                    (pulsar-mode +1)
-                    (pulsar-pulse-line))
+        (require 'pulsar)
+        (-let [pulsar-face (rdd@ ,repl blink)]
+          (pulsar-mode +1)
+          (pulsar-pulse-line))
 
-                  (pcase current-prefix-arg
-                    (0  (,(intern (format "%s/jump-to-process-buffer" (rdd@ repl fun-name)))))
-                    (-1 (,(intern (format "%s/restart" (rdd@ repl fun-name)))))
-                    ;; ('(4)  (insert " " output)) ;; C-u ;; handled when we actually have the output; see the process filter below
-                    ('(16) ;; C-u C-u ⇒ documentation lookup
-                     (,(intern (format "%s/docs-at-point" (rdd@ repl fun-name)))))
-                    (_
-                     (if (use-region-p)
-                         (deactivate-mark)
-                       (beginning-of-line)
-                       (setq region-beg (point))
-                       (end-of-line)
-                       (setq region-end (point)))
-                     (setf (rdd@ ,repl current-input/start) region-beg)
-                     (setf (rdd@ ,repl current-input/end) region-end)
-                     (,(intern (format "%s/submit" (rdd@ repl fun-name)))
-                      (s-trim-left (buffer-substring-no-properties region-beg region-end)))))))))
+        (pcase current-prefix-arg
+          (0  (,(intern (format "%s/jump-to-process-buffer"
+                                (rdd@ repl fun-name)))))
+          (-1 (,(intern (format "%s/restart" (rdd@ repl fun-name)))))
+          ;; ('(4)  (insert " " output)) ;; C-u ;; handled when we actually have
+          ;; the output; see the process filter below
+          ('(16) ;; C-u C-u ⇒ documentation lookup
+           (,(intern (format "%s/docs-at-point" (rdd@ repl fun-name)))))
+          (_
+           (if (use-region-p)
+               (deactivate-mark)
+             (beginning-of-line)
+             (setq region-beg (point))
+             (end-of-line)
+             (setq region-end (point)))
+           (setf (rdd@ ,repl current-input/start) region-beg)
+           (setf (rdd@ ,repl current-input/end) region-end)
+           (,(intern (format "%s/submit" (rdd@ repl fun-name)))
+            (s-trim-left (buffer-substring-no-properties
+                          region-beg
+                          region-end)))))))))
+
 
 (defun repl-driven-development--docs-at-point (docs)
   "Lookup documentation at point using the given DOCS."
-  ;; Test this by writing a word such as “IntStream.range(0, 44)” then M-: (repl-driven-development--docs-at-point '("openjdk~19"))
+  ;; Test this by writing a word such as “IntStream.range(0, 44)”
+  ;; then M-: (repl-driven-development--docs-at-point '("openjdk~19"))
   ;; anywhere on the phrase
-
-  ;; devdocs-lookup will ask to setup current docs when there's a current-prefix, so we null it.
-  ;; If user does have it setup, we want to temporarily change its value for use with the current repl.
-  (let ((devdocs-history nil) (current-prefix-arg nil) (devdocs-current-docs docs) (word (or (thing-at-point 'symbol) "")))
-    ;; (devdocs-lookup nil word) ⇒ Quits abruptly when keyword is not a valid candidate!
+  ;;
+  ;; devdocs-lookup will ask to setup current docs when there's a
+  ;; current-prefix, so we null it.
+  ;; If user does have it setup, we want to temporarily change its value for
+  ;; use with the current repl.
+  (let ((devdocs-history nil)
+        (current-prefix-arg nil)
+        (devdocs-current-docs docs)
+        (word (or (thing-at-point 'symbol) "")))
+    ;; (devdocs-lookup nil word) ⇒ Quits abruptly when keyword is not a
+    ;; valid candidate!
     (minibuffer-with-setup-hook
         `(lambda () (insert ,word))
       (call-interactively #'devdocs-lookup))))
+
 
 ;; TODO: Add docs about *REPL* buffer, its purpose, and alternatives
 (cl-defmethod rdd---make-repl-function-docstring
@@ -745,11 +815,12 @@ TODO: Actually use ADDITIONAL-REMARKS."
     example uses as well. Visit https://devdocs.io/ to see the list of documented
     languages and libraries.
 
-    ##### “C-u 0” Prefix: See associated buffer via `repl/${cli}/jump-to-process-buffer'
+    ##### “C-u 0” Prefix: See associated buffer via \
+    `repl/${cli}/jump-to-process-buffer'
 
     Sometimes it may be useful to look at a large output in a dedicated buffer.
-    However, the output of a command is also attached to the input via a tooltip:
-    Hover to see it! See also `tooltip-delay'.
+    However, the output of a command is also attached to the input via a
+    tooltip: Hover to see it! See also `tooltip-delay'.
 
     ##### “C-u -1” Prefix: Restart REPL via `repl/${cli}/restart'
 
@@ -758,10 +829,10 @@ TODO: Actually use ADDITIONAL-REMARKS."
 
     ##### Implementation Notes
 
-    The interactive method is asynchronous: Whenever you send text for evaluation,
-    you immediately regain control in Emacs; you may send more text and it will be
-    queued for evaluation. For example, evaluating a sleep command for 3 seconds
-    does not block Emacs.
+    The interactive method is asynchronous: Whenever you send text for
+    evaluation, you immediately regain control in Emacs; you may send more text
+    and it will be queued for evaluation. For example, evaluating a sleep
+    command for 3 seconds does not block Emacs.
 
     From Lisp, consider using `repl/${cli}/submit'.
 
