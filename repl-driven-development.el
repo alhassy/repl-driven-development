@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.7
+;; Version: 1.0.8
 ;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -615,8 +615,8 @@ docs."
     (setq docs (--reject (s-blank? it) (s-split " " docs)))
     (cl-assert (listp docs))
     (-let [installed (mapc #'f-base (f-entries devdocs-data-dir))]
-      (--map (unless (member it installed)
-               (devdocs-install (list (cons 'slug it)))) docs))
+      (mapc (lambda (it) (unless (member it installed)
+                      (devdocs-install (list (cons 'slug it))))) docs))
     docs))
 
 (defun repl-driven-development--insert-or-echo (repl output)
@@ -639,8 +639,8 @@ docs."
                          output))))
      (unless (s-blank? (s-trim output))
        (unless  (equal output (s-trim (rdd@ repl current-input)))
-         (mapcar #'delete-overlay
-                 (overlays-at (rdd@ repl current-input/start)))
+         (mapc #'delete-overlay
+               (overlays-at (rdd@ repl current-input/start)))
          (let ((overlay (make-overlay (rdd@ repl current-input/start)
                                       (rdd@ repl current-input/end))))
            (overlay-put overlay 'help-echo output)))
@@ -860,8 +860,8 @@ Each function consumes a single argument: The output result, as a string.
 
 For example:
 
-     ;; I'd like “C­h e” to show eval result ---just as “C­x C­e” does.
-     (add-hook 'repl-driven-development-output-hook
+     ;; I want “C-h e” to show eval result ---just as “C-x C-e” does.
+     (add-hook \\='repl-driven-development-output-hook
                (lambda (output)
                 (let ((inhibit-message t))
                   (message \"REPL⇒ %s\" output))
