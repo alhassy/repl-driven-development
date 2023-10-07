@@ -415,8 +415,8 @@
     We try to ignore showing it in an overlay that would otherwise hide
     useful output.
 
-  - DOCS [String]: A space-seperated string denoting a list of language documents
-    you'd like to associate with your repl.
+  - DOCS [String]: A space-seperated string denoting a list of language
+    documents you'd like to associate with your repl.
     Invoking your repl with “C-u C-u” will show the documentation
     of the word at point.  This is done using `devdocs'.
 
@@ -470,6 +470,9 @@
       ('java
        ;; JShell does semicolon insertion eagerly, so it things the following
        ;; are three separate expressions! We can fix this by removing new lines.
+       ;; TODO: Name should be “java”, then all associated functions should get
+       ;; the “repl/” prefix automatically.
+       ;; TODO: Consider *standard* scheme “java-repl” instead of “repl/java”!
        `(repl-driven-development ,keys "jshell"
                                  :name 'repl/java
                                  :prompt "jshell>"
@@ -548,14 +551,14 @@ repl:
 
 ❌ The Python repl abruptly terminates def|class definitions when there is an
   empty new line in their definition.
-✓ This configuration strips out all empty newlines.
+✔ This configuration strips out all empty newlines.
 
 ❌ The Python repl requires an extra new line after a def|class definition to
   confirm that the definition has concluded.
-✓ This configuration automatically adds such extra new lines.
+✔ This configuration automatically adds such extra new lines.
 
 ❌ The Python repl emits nothing when a def|class declaration is submitted.
-✓ This configuration emits a “Defined ⋯” message, along with the declaration's
+✔ This configuration emits a “Defined ⋯” message, along with the declaration's
    body."
   (repl-driven-development
    keys
@@ -614,33 +617,33 @@ docs."
     (-let [installed (mapc #'f-base (f-entries devdocs-data-dir))]
       (--map (unless (member it installed)
                (devdocs-install (list (cons 'slug it)))) docs))
-    docs)
+    docs))
 
-  (defun repl-driven-development--insert-or-echo (repl output)
-    "If there's a C-u, then insert the output; else echo it in overlay"
-    (cl-assert (stringp output))
-    (pcase current-prefix-arg
-      ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
-              (insert " " (funcall
-                           (intern (format "repl/%s/read"
-                                           (rdd@ repl cmd))) output))))
-      ;; All other prefixes are handled by repl-fun-name, above.
-      (_
-       ;; Show output as an overlay at the current cursor position
-       ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
-       ;; it does some sexp look-about, which may not mix well with, say, JS
-       ;; arrow functions, so we freeze such movements, locally. ﴿
-       (setq output
-             (apply (rdd@ repl echo-rewrite-fn)
-                    (list (repl-driven-development--ignore-ansi-color-codes
-                           output))))
-       (unless (s-blank? (s-trim output))
-         (unless  (equal output (s-trim (rdd@ repl current-input)))
-           (mapcar #'delete-overlay
-                   (overlays-at (rdd@ repl current-input/start)))
-           (let ((overlay (make-overlay (rdd@ repl current-input/start)
-                                        (rdd@ repl current-input/end))))
-             (overlay-put overlay 'help-echo output))))
+(defun repl-driven-development--insert-or-echo (repl output)
+  "If there's a C-u, then insert the output; else echo it in overlay"
+  (cl-assert (stringp output))
+  (pcase current-prefix-arg
+    ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
+            (insert " " (funcall
+                         (intern (format "repl/%s/read"
+                                         (rdd@ repl cmd))) output))))
+    ;; All other prefixes are handled by repl-fun-name, above.
+    (_
+     ;; Show output as an overlay at the current cursor position
+     ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
+     ;; it does some sexp look-about, which may not mix well with, say, JS
+     ;; arrow functions, so we freeze such movements, locally. ﴿
+     (setq output
+           (apply (rdd@ repl echo-rewrite-fn)
+                  (list (repl-driven-development--ignore-ansi-color-codes
+                         output))))
+     (unless (s-blank? (s-trim output))
+       (unless  (equal output (s-trim (rdd@ repl current-input)))
+         (mapcar #'delete-overlay
+                 (overlays-at (rdd@ repl current-input/start)))
+         (let ((overlay (make-overlay (rdd@ repl current-input/start)
+                                      (rdd@ repl current-input/end))))
+           (overlay-put overlay 'help-echo output)))
        (thread-yield)
        (require 'eros)
        (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
@@ -734,7 +737,7 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
      (bind-key*
       (rdd@ ,repl keybinding)
       (defun ,(rdd@ repl fun-name) (region-beg region-end)
-        ,(rdd---make-repl-function-docstring repl)
+        ,(repl-driven-development--make-repl-function-docstring repl)
         (interactive "r")
 
         (require 'pulsar)
@@ -787,12 +790,12 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
 
 
 ;; TODO: Add docs about *REPL* buffer, its purpose, and alternatives
-(defun rdd---make-repl-function-docstring (repl)
-  "Make the docstring for a repl function working with command CLI."
-  (setq repl (rdd@ repl cmd))
-  (-let [keys (rdd@ repl keybinding)]
-    (lf-string
-     "Executes the selected region, if any or otherwise the entire current line,
+(defun repl-driven-development--make-repl-function-docstring (repl)
+"Make the docstring for a REPL function working with command CLI."
+(setq repl (rdd@ repl cmd))
+(-let [keys (rdd@ repl keybinding)]
+  (lf-string
+   "Executes the selected region, if any or otherwise the entire current line,
     and evaluates it with the command-line tool “${repl}”.
 
     Output is shown as an overlay at the current cursor position.
