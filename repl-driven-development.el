@@ -158,6 +158,7 @@
       (elisp-lint--byte-compile  (buffer-file-name))
       ;; Show me references to unbound symbols
       (elint-current-buffer)
+      (my/load-file-in-new-emacs)
 
       (progn ;; Execute the following setup code once
         ;; Nearly instantaneous display of tooltips.
@@ -201,7 +202,26 @@
           (delete-other-windows)
           (split-window-below 40)
           (other-window 1)
-          (switch-to-buffer "*Flycheck errors*")))
+          (switch-to-buffer "*Flycheck errors*"))
+
+        (cl-defun my/load-file-in-new-emacs (&optional (filename (buffer-file-name)))
+          (thread-first
+            `(progn
+               (require 'package)
+               (setq package-archives '(("gnu"    . "http://elpa.gnu.org/packages/")
+                                        ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+                                        ("melpa"  . "http://melpa.org/packages/")))
+               (package-refresh-contents)
+               (require 'use-package)
+               (package-install 'dash)
+               (find-file ,filename)
+               (mapcar (lambda (it) (package-install (car it)) (require (car it))) (package-desc-reqs (package-buffer-info)))
+               (byte-compile ,filename)
+               (load-file ,filename))
+            pp-to-string
+            (write-region nil "~/Downloads/minimal-init.el"))
+          (async-shell-command "emacs --eval '(load-file \"~/Downloads/minimal-init.el\")'"))
+        )
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
