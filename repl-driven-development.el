@@ -196,6 +196,7 @@
         ;; https://github.com/emacs-eldev/eldev
 
         (defun my/show-errors ()
+          (flycheck-mode)
           (flycheck-list-errors)
           (delete-other-windows)
           (split-window-below 40)
@@ -315,7 +316,9 @@
       (rdd@ \"foo\" name)                ;; ⇒ nil
       (setf (rdd@ \"foo\" name) 'Jasim)
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
-      `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+
+(defvar repl-driven-development-echo-duration 5)
 
 ;;;###autoload
 (cl-defmacro repl-driven-development
@@ -462,10 +465,10 @@
   same author: http://alhassy.com/making-vscode-itself-a-java-repl"
   (-let [strip-out-C-style-comments&newlines
          '(lambda (in) (thread-last
-                    in
-                    (s-replace-regexp "/\\*.\\*/" "")
-                    (s-replace-regexp "//.*$" "")
-                    (s-replace-regexp "\n" "")))]
+                         in
+                         (s-replace-regexp "/\\*.\\*/" "")
+                         (s-replace-regexp "//.*$" "")
+                         (s-replace-regexp "\n" "")))]
     (pcase cli
       ('java
        ;; JShell does semicolon insertion eagerly, so it things the following
@@ -620,7 +623,9 @@ docs."
     docs))
 
 (defun repl-driven-development--insert-or-echo (repl output)
-  "If there's a C-u, then insert the output; else echo it in overlay"
+  "If there's a C-u, then insert the OUTPUT; else echo it in overlay.
+
+The echo only happens when OUTPUT differs from REPL's input."
   (cl-assert (stringp output))
   (pcase current-prefix-arg
     ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
@@ -890,8 +895,6 @@ https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.html.
             (insert (repl-driven-development--ignore-ansi-color-codes string)))
           (set-marker (process-mark proc) (point)))
         (if moving (goto-char (process-mark proc)))))))
-
-(defvar repl-driven-development-echo-duration 5)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
