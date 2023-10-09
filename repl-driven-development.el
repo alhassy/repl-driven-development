@@ -623,25 +623,6 @@ The echo only happens when OUTPUT differs from REPL's input."
      ;; TODO: Make a defun with a callback for repl testing a la
      ;; set-process-filter.
 
-     (defun ,(intern (format "%s/jump-to-process-buffer" (rdd@ repl fun-name)))
-         ()
-       "Toggle to the buffer associated with this REPL process; see a log of \
-your submissions.
-
-Invoke once to go to the REPL buffer; invoke again to jump back to your \
-original buffer."
-       (interactive)
-       (if (equal (current-buffer) (process-buffer (rdd@ ,repl process)))
-           (switch-to-buffer
-            (get (quote ,(intern (format "%s/jump-to-process-buffer"
-                                         (rdd@ repl fun-name))))
-                 'location))
-         (setf (get (quote ,(intern (format "%s/jump-to-process-buffer"
-                                            (rdd@ repl fun-name))))
-                    'location)
-               (current-buffer))
-         (switch-to-buffer (process-buffer (rdd@ ,repl process)))))
-
      ;; restart repl, [then send to repl --does not work since REPLs take a sec
      ;; to load. That's OK, not a deal-breaker!]
      (defun ,(intern (format "%s/restart" (rdd@ repl fun-name))) ()
@@ -709,7 +690,7 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
           (pulsar-pulse-line))
 
         (pcase current-prefix-arg
-          (0  (,(intern (format "%s/jump-to-process-buffer"
+          (0  (,(intern (format "%s/display-most-recent-result"
                                 (rdd@ repl fun-name)))))
           (-1 (,(intern (format "%s/restart" (rdd@ repl fun-name)))))
           ;; ('(4)  (insert " " output)) ;; C-u ;; handled when we actually have
@@ -776,6 +757,13 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     Do so by redefining `repl/${repl}/read'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+          ﴾ C-u 0 ${keys}   ≈  `repl/${repl}/display-most-recent-result' ﴿
+
+    Sometimes it may be useful to look at a large output in a dedicated buffer.
+    However, the output of a command is also attached to the input via a
+    tooltip: Hover to see it! See also `tooltip-delay'.
+
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
               ﴾ C-u C-u ${keys}  ≈  `repl/${repl}/docs-at-point' ﴿
 
     With a “C-u C-u” prefix, documentation is looked-up for the word at point.
@@ -783,13 +771,6 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     This is done using `devdocs', and so the documentation generally provides
     example uses as well. Visit https://devdocs.io/ to see the list of documented
     languages and libraries.
-
-    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-          ﴾ C-u 0 ${keys}   ≈  `repl/${repl}/jump-to-process-buffer' ﴿
-
-    Sometimes it may be useful to look at a large output in a dedicated buffer.
-    However, the output of a command is also attached to the input via a
-    tooltip: Hover to see it! See also `tooltip-delay'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
                  ﴾ C-u -1 ${keys}  ≈  `repl/${repl}/restart' ﴿
