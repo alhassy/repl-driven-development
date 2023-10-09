@@ -784,8 +784,8 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
 
     See `repl-driven-development' for more useful docs.
 
-    See www.alhassy.com/repl-driven-development to learn more about RDD and see
-    examples and many gifs.")))
+    See URL `http://www.alhassy.com/repl-driven-development' to learn more about
+    RDD see examples and many gifs.")))
 
 (defvar repl-driven-development-output-hook nil
   "A list of functions to execute after REPL output has been computed.
