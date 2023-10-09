@@ -143,7 +143,6 @@
 ;; https://github.com/magnars/dash.el
 ;; https://github.com/magnars/s.el
 
-;; TODO: Clean up code ---i.e., address various TODOs.
 ;; TODO: Add mini-tutorial, from pkg docs, to Github README.
 ;; TODO: Implement Read Protocol for Java.
 ;; TODO[Low Priority]: Implement pretty printing for Python.
@@ -791,6 +790,14 @@ docs."
    :input-rewrite-fn
    #'repl-driven-development--strip-out-C-style-comments&newlines))
 
+(defun repl-driven-development--strip-out-C-style-comments&newlines (str)
+  "Strip out C-style single-line and multi-line comments from STR."
+  (thread-last
+    str
+    (s-replace-regexp "/\\*.\\*/" "")
+    (s-replace-regexp "//.*$" "")
+    (s-replace-regexp "\n" "")))
+
 (defun repl-driven-development--preconfigured-python-REPL (keys)
   "A Python REPL configuration, bound to keybinding KEYS.
 
@@ -832,21 +839,105 @@ repl:
              (t result))))))
 
 (defun repl-driven-development--preconfigured-java-REPL (keys)
-  "A Java REPL configuration, bound to keybinding KEYS."
-  (repl-driven-development
-   keys
-   "jshell"
-   :name 'java-repl
-   :prompt "jshell>"
-   :input-rewrite-fn
-   #'repl-driven-development--strip-out-C-style-comments&newlines))
+"A Java REPL configuration, bound to keybinding KEYS.
 
-(defun repl-driven-development--strip-out-C-style-comments&newlines (str)
-  "Strip out C-style single-line and multi-line comments from STR."
-  (thread-last
-    str
-    (s-replace-regexp "/\\*.\\*/" "")
-    (s-replace-regexp "//.*$" "")
-    (s-replace-regexp "\n" "")))
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+﴾ Setting a Classpath ﴿
+
+The classpath lets jshell access non-standard-library code.
+
+    % jshell --class-path .:myJar:myOtherJar:dir/to/compiled/classes
+
+Paths can be to Java Archives (JARs) or to directories of *compiled* class files
+---which must be in a *named package*.
+
+You also use the '/env' command to set the classpath:
+
+jshell> /env --class-path myOwnClassPath
+|  Setting new options and restoring state.
+jshell> import my.cool.code.*
+
+Note that this command resets the execution state, reloading any
+current snippets with the new classpath setting (or other
+environment setting).
+
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+﴾ JShell Feedback Modes ﴿
+
+The built-in feedback modes cannot have their
+prompt|truncation|format changed, but we can inheirt from a
+built-in mode, then change those properties.
+
+⟅ ✔ Notify me when imports succeed ⟆
+
+In the format, inherited from normal mode, an import doesn't give
+any feedback, and the type of a value is not shown.
+
+    import java.beans.* // Submit this twice and both times see nothing :-(
+
+    /set mode myNewMode normal -command
+    /set feedback myNewMode
+    /help /set format  // There is extensive help on this command with /help /set format.
+
+    /set format myNewMode display \"{pre}added import {name}{post}\" import-added
+    /set format myNewMode display \"{pre}re-added import {name}{post}\" import-modified,replaced
+
+    import java.awt.Graphics // Submit this twice and see two distinct messages 🕹
+
+This is automatically part of the Emacs Java REPL.
+
+⟅ ✔ Show types of results ⟆
+
+Let's also change the default “var ==> value” output to include the type of the resulting value.
+
+    // The payload does not indicate the type of this thing,
+    // I'd like to know what kind of data I'm working with!
+    Locale.CANADA.getUnicodeLocaleAttributes() // $10 ==> []
+
+    /set format myNewMode result \"{type} {name} = {value}{post}\" added,modified,replaced-primary-ok
+
+    2 + 4                                      // int $11 = 6
+    String me = \"hello\"                      // Emits: String me ⇒ \"hello\"
+    Locale.CANADA.getUnicodeLocaleAttributes() // Set<String> $12 = []
+
+⟅ ✔ Extended Truncation Limit ⟆
+
+We can increase the truncation as follows, this is done automatically for the Java REPL.
+
+   /set truncation myNewMode 40000
+   IntStream.range(0, 40000).mapToObj(x -> x).toList()
+
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+﴾ Useful Reading ﴿
+
+- The excellent JShell Tutorial by Robert Field:
+  https://cr.openjdk.org/~rfield/tutorial/JShellTutorial.htmlA Gentle Intro to JShell:
+  https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/Java-JShell-Online-Commands-How-to-Tutorial-Exit
+
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+﴾ Implementation Notes ﴿
+
+We do not use the “--startup JAVASE” option to import all Java SE packages by
+default; since the simplest call “List.of(1)” results in an ambiguity error:
+java.util.List and java.awt.List match.
+"
+(repl-driven-development
+ keys
+ ;; enable assertions, and add everything installed, via `mvn', in scope.
+ (format "jshell --class-path %s --enable-preview -R -ea --feedback silent"
+         (concat ".:" (shell-command-to-string "find ~/.m2/repository -name \"*.jar\" -type f 2>/dev/null | tr '\n' ':'")))
+ :name 'java-repl
+ :prompt "jshell>"
+ :input-rewrite-fn
+ #'repl-driven-development--strip-out-C-style-comments&newlines
+ :init "/set mode EmacsJavaMode normal -command
+/set format EmacsJavaMode display \"{pre}added import {name}{post}\" import-added
+/set format EmacsJavaMode display \"{pre}re-added import {name}{post}\" import-modified,replaced
+/set format EmacsJavaMode result \"{type} {name} = {value}{post}\" added,modified,replaced-primary-ok
+/set truncation EmacsJavaMode 40000
+/set feedback EmacsJavaMode
+System.out.println(\"Enjoy Java with Emacs (｡◕‿◕｡))\")"))
+
+;; TODO [Truncation; Low] https://github.com/xiongtx/eros/blob/master/eros.el#L202
 
 ;;; repl-driven-development.el ends here
