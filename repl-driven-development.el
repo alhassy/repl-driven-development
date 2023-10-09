@@ -593,20 +593,28 @@ The echo only happens when OUTPUT differs from REPL's input."
                          output))))
      (unless (s-blank? (s-trim output))
        (unless  (equal output (s-trim (rdd@ repl current-input)))
+         ;; Tooltips ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
          (mapc #'delete-overlay
                (overlays-at (rdd@ repl current-input/start)))
          (let ((overlay (make-overlay (rdd@ repl current-input/start)
                                       (rdd@ repl current-input/end))))
-           (overlay-put overlay 'help-echo output)))
-       (thread-yield)
-       (require 'eros)
-       (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
-         (eros--make-result-overlay output
-           :format  " ⮕ %s"
-           :duration repl-driven-development-echo-duration))))))
+           (overlay-put overlay 'help-echo output))
+         ;; Messages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+         ;; I want “C-h e” to show eval result ---just as “C-x C-e” does.
+         (let ((inhibit-message
+                (not repl-driven-development-echo-output-in-modeline)))
+           (message "﴾%s﴿⇒ %s" (rdd@ repl fun-name)  output))
+         ;; Overlays ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+         (require 'eros)
+         (cl-letf (((symbol-function 'backward-sexp) (lambda (&rest _) 0)))
+           (eros--make-result-overlay output
+             :format  " ⮕ %s"
+             :duration repl-driven-development-echo-duration)))))))
 
-(defvar repl-driven-development--insert-into-repl-buffer t)
+(defvar repl-driven-development-echo-output-in-modeline nil
+  "In addition to the overlays, should REPL output be emitted in the modeline?
 
+You can always use `C-h e' to see output in the *Messages* buffer.")
 
 (defun repl-driven-development--make-repl-function (repl)
   "Constructs code denoting a function that sends a region to a REPL process."
@@ -736,6 +744,16 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     It is shown for `repl-driven-development-echo-duration' many seconds.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                             ﴾ Familiar Workflow ﴿
+
+    You can execute arbitrary Lisp anywhere by pressing “C-x C-e”, you can
+    insert the result with “C-u C-x C-e”, and see the output echoed in the
+    mode-line and in the *Messages* buffer with “C-h e”.
+    Likewise, you can execute ${repl} by pressing “${keys}”, insert output with
+    “C-u ${keys}”, and see the output echoed near your cursor and in the
+    *Messages* buffer with “C-h e”.
+
+    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
                        ﴾ C-u ${keys}  ≈  Insert result ﴿
 
     With a “C-u” prefix, the output is inserted at point
@@ -752,6 +770,8 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     Sometimes it may be useful to look at a large output in a dedicated buffer.
     However, the output of a command is also attached to the input via a
     tooltip: Hover to see it! See also `tooltip-delay'.
+    Moreover, “C-h e” shows you the output in the *Messages* buffer.
+    See also `repl-driven-development-echo-output-in-modeline'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
               ﴾ C-u C-u ${keys}  ≈  `${repl}-docs-at-point' ﴿
