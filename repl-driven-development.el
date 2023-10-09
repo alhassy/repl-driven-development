@@ -170,7 +170,7 @@
       ;; Insert the result of the above shell command with C-u C-x C-t.
 
       ;; Or see it in its own buffer with M-x ...
-      (repl/bash/display-most-recent-result) ;; i.e., (rdd@ "bash" output)
+      (bash-repl-display-most-recent-result) ;; i.e., (rdd@ "bash" output)
 
       ;; We can also restart the repl... let's set some state
       export X=123
@@ -267,14 +267,14 @@
   (interactive)
   (message repl-driven-development-version))
 
-(defmacro rdd@ (cmd property)
+(defmacro rdd@ (name property)
   "Get/set PROPERTY under namespace CMD.
 
       Usage:
       (rdd@ \"foo\" name)                ;; ⇒ nil
       (setf (rdd@ \"foo\" name) 'Jasim)
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
-  `(get (intern (format "repl/%s" ,cmd)) (quote ,property)))
+  `(get (intern (format "%s" ,name)) (quote ,property)))
 
 (defvar repl-driven-development-echo-duration 5)
 
@@ -409,11 +409,11 @@
     Intentionally meant for human friendly pretty-printing, not for
     a READ protocol. Those serve different goals.
     The default READ protocol is this echo-rewrite-fn.
-    Enter “M-x repl/.*/read” to see the docs of the READ protocol
+    Enter “M-x .*-repl-read” to see the docs of the READ protocol
     for any REPL defined with this macro.
 
   - NAME [Symbol]: The name of the function associated to the keybinding
-    KEYS. By default, the name is “repl/CLI”. This is used to namespace all
+    KEYS. By default, the name is “CLI-repl”. This is used to namespace all
     other functions created by this macro.
 
   Finally, you may register callbacks via `repl-driven-development-output-hook'.
@@ -423,31 +423,28 @@
   same author: http://alhassy.com/making-vscode-itself-a-java-repl"
   (-let [strip-out-C-style-comments&newlines
          '(lambda (in) (thread-last
-                         in
-                         (s-replace-regexp "/\\*.\\*/" "")
-                         (s-replace-regexp "//.*$" "")
-                         (s-replace-regexp "\n" "")))]
+                    in
+                    (s-replace-regexp "/\\*.\\*/" "")
+                    (s-replace-regexp "//.*$" "")
+                    (s-replace-regexp "\n" "")))]
     (pcase cli
       ('java
        ;; JShell does semicolon insertion eagerly, so it things the following
        ;; are three separate expressions! We can fix this by removing new lines.
-       ;; TODO: Name should be “java”, then all associated functions should get
-       ;; the “repl/” prefix automatically.
-       ;; TODO: Consider *standard* scheme “java-repl” instead of “repl/java”!
        `(repl-driven-development ,keys "jshell"
-                                 :name 'repl/java
+                                 :name 'java-repl
                                  :prompt "jshell>"
                                  :input-rewrite-fn
                                  ,strip-out-C-style-comments&newlines))
       ;; Likewise JS does eager semicolon insertion.
       ('javascript
        `(repl-driven-development ,keys "node"
-                                 :name 'repl/javascript
+                                 :name 'javascript-repl
                                  :prompt ">"
                                  :input-rewrite-fn
                                  ,strip-out-C-style-comments&newlines))
       ('terminal `(repl-driven-development ,keys "bash"
-                                           :name 'repl/terminal
+                                           :name 'terminal-repl
                                            :prompt "^[^ ]*\\$"))
       ('python `(repl-driven-development--preconfigured-python-REPL ,keys))
       (_ `(-let* (((repl . args) (s-split " " ,cli)))
@@ -466,7 +463,7 @@
             (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
             (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn)
             (setf (rdd@ repl fun-name)
-                  (or ,name (intern (concat "repl/" (rdd@ repl cmd)))))
+                  (or ,name (intern (format "%s-repl" (rdd@ repl cmd)))))
 
             (setf (rdd@ repl init) ,init)
             (cl-assert (or (stringp ,init) (listp ,init)))
@@ -478,13 +475,7 @@
             ;; start-process.
             (setf (rdd@ repl process)
                   (apply #'start-process "repl-driven-development"
-                         (format "*REPL/%s*" repl) repl args))
-            ;; https://stackoverflow.com/q/4120054
-            ;; (set-process-coding-system repl-process 'unix)
-            (with-current-buffer (process-buffer (rdd@ repl process))
-              (setq buffer-display-table (make-display-table))
-              (aset buffer-display-table ?\^M [])
-              (setq buffer-read-only t))
+                         nil repl args))
 
             (setq docs
                   (repl-driven-development--install-any-not-yet-installed-docs
@@ -525,7 +516,7 @@ repl:
    keys
    "python3"
    :prompt ">>>"
-   :name 'repl/python
+   :name 'python-repl
    :blink 'pulsar-red
    ;; Remove empty lines: In the middle of a def|class, they abruptly terminate
    ;; the def|class!
@@ -588,8 +579,8 @@ The echo only happens when OUTPUT differs from REPL's input."
   (pcase current-prefix-arg
     ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
             (insert " " (funcall
-                         (intern (format "repl/%s/read"
-                                         (rdd@ repl cmd))) output))))
+                         (intern (format "%s-read"
+                                         (rdd@ repl fun-name))) output))))
     ;; All other prefixes are handled by repl-fun-name, above.
     (_
      ;; Show output as an overlay at the current cursor position
@@ -625,7 +616,7 @@ The echo only happens when OUTPUT differs from REPL's input."
 
      ;; restart repl, [then send to repl --does not work since REPLs take a sec
      ;; to load. That's OK, not a deal-breaker!]
-     (defun ,(intern (format "%s/restart" (rdd@ repl fun-name))) ()
+     (defun ,(intern (format "%s-restart" (rdd@ repl fun-name))) ()
        "Restart the REPL process."
        (interactive)
        (kill-buffer (process-buffer (rdd@ ,repl process)))
@@ -636,12 +627,12 @@ The echo only happens when OUTPUT differs from REPL's input."
                                 :init (rdd@ ,repl init)
                                 :blink (rdd@ ,repl blink)))
 
-     (defun ,(intern (format "%s/docs-at-point" (rdd@ repl fun-name))) ()
+     (defun ,(intern (format "%s-docs-at-point" (rdd@ repl fun-name))) ()
        "Documentation at point."
        (interactive)
        (repl-driven-development--docs-at-point (quote ,(rdd@ repl docs))))
 
-     (defun ,(intern (format "%s/read" (rdd@ repl fun-name))) (str)
+     (defun ,(intern (format "%s-read" (rdd@ repl fun-name))) (str)
        "Read STR into code executable by the REPL.
 
 This is intended to result in executable code, from a possibly prettified string.
@@ -658,7 +649,7 @@ YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
        (interactive "sRead: ")
        (apply (rdd@ ,repl echo-rewrite-fn) (list str)))
 
-     (defun ,(intern (format "%s/submit" (rdd@ repl fun-name))) (str)
+     (defun ,(intern (format "%s-submit" (rdd@ repl fun-name))) (str)
        ,(format "Send STR to the REPL process, followed by a newline.
 
 To submit a region, use `%s'." (rdd@ repl fun-name))
@@ -668,14 +659,15 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
        (process-send-string (rdd@ ,repl process) "\n"))
 
      (defun
-         ,(intern (format "%s/display-most-recent-result" (rdd@ repl fun-name)))
+         ,(intern (format "%s-display-most-recent-result" (rdd@ repl fun-name)))
          ()
        "Show most recent REPL result. With C-u prefix, result is shown in its \
         own buffer."
        (interactive)
        (if (not current-prefix-arg)
            (display-message-or-buffer (rdd@ ,repl output))
-         (switch-to-buffer (format "*REPL/%s/most-recent-result*" ,repl))
+         (switch-to-buffer (format "*%s-most-recent-result*"
+                                   (rdd@ ,repl fun-name)))
          (insert (rdd@ ,repl output))))
 
      (bind-key*
@@ -690,13 +682,13 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
           (pulsar-pulse-line))
 
         (pcase current-prefix-arg
-          (0  (,(intern (format "%s/display-most-recent-result"
+          (0  (,(intern (format "%s-display-most-recent-result"
                                 (rdd@ repl fun-name)))))
-          (-1 (,(intern (format "%s/restart" (rdd@ repl fun-name)))))
+          (-1 (,(intern (format "%s-restart" (rdd@ repl fun-name)))))
           ;; ('(4)  (insert " " output)) ;; C-u ;; handled when we actually have
           ;; the output; see the process filter below
           ('(16) ;; C-u C-u ⇒ documentation lookup
-           (,(intern (format "%s/docs-at-point" (rdd@ repl fun-name)))))
+           (,(intern (format "%s-docs-at-point" (rdd@ repl fun-name)))))
           (_
            (if (use-region-p)
                (deactivate-mark)
@@ -706,7 +698,7 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
              (setq region-end (point)))
            (setf (rdd@ ,repl current-input/start) region-beg)
            (setf (rdd@ ,repl current-input/end) region-end)
-           (,(intern (format "%s/submit" (rdd@ repl fun-name)))
+           (,(intern (format "%s-submit" (rdd@ repl fun-name)))
             (s-trim-left (buffer-substring-no-properties
                           region-beg
                           region-end)))))))))
@@ -732,14 +724,12 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
         `(lambda () (insert ,word))
       (call-interactively #'devdocs-lookup))))
 
-
-;; TODO: Add docs about *REPL* buffer, its purpose, and alternatives
 (defun repl-driven-development--make-repl-function-docstring (repl)
-"Make the docstring for a REPL function working with command CLI."
-(setq repl (rdd@ repl cmd))
-(-let [keys (rdd@ repl keybinding)]
-  (lf-string
-   "Executes the selected region, if any or otherwise the entire current line,
+  "Make the docstring for a REPL function working with command CLI."
+  (-let [keys (rdd@ repl keybinding)]
+    (setq repl (rdd@ repl fun-name))
+    (lf-string
+     "Executes the selected region, if any or otherwise the entire current line,
     and evaluates it with the command-line tool “${repl}”.
 
     Output is shown as an overlay at the current cursor position.
@@ -754,17 +744,17 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     Since ${repl} may pretty-print its output, inserting it may result in
     non-executable code. If you want executable code, you must specify
     how pretty-printed output must be converted into ${repl}-executable code.
-    Do so by redefining `repl/${repl}/read'.
+    Do so by redefining `${repl}-read'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-          ﴾ C-u 0 ${keys}   ≈  `repl/${repl}/display-most-recent-result' ﴿
+          ﴾ C-u 0 ${keys}   ≈  `${repl}-display-most-recent-result' ﴿
 
     Sometimes it may be useful to look at a large output in a dedicated buffer.
     However, the output of a command is also attached to the input via a
     tooltip: Hover to see it! See also `tooltip-delay'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-              ﴾ C-u C-u ${keys}  ≈  `repl/${repl}/docs-at-point' ﴿
+              ﴾ C-u C-u ${keys}  ≈  `${repl}-docs-at-point' ﴿
 
     With a “C-u C-u” prefix, documentation is looked-up for the word at point.
 
@@ -773,7 +763,7 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     languages and libraries.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-                 ﴾ C-u -1 ${keys}  ≈  `repl/${repl}/restart' ﴿
+                 ﴾ C-u -1 ${keys}  ≈  `${repl}-restart' ﴿
 
     In the event you've messed-up your REPL, starting from a blank slate may be
     helpful.
@@ -787,7 +777,7 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     command for 3 seconds does not block Emacs.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-    From Lisp, consider using `repl/${repl}/submit'.
+    From Lisp, consider using `${repl}-submit'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
                                   ﴾ See also ﴿
