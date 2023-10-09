@@ -416,8 +416,6 @@
     KEYS. By default, the name is “CLI-repl”. This is used to namespace all
     other functions created by this macro.
 
-  Finally, you may register callbacks via `repl-driven-development-output-hook'.
-
   ### Misc Remarks #####################################################
   VSCode has a similar utility for making in-editor REPLs, by the
   same author: http://alhassy.com/making-vscode-itself-a-java-repl"
@@ -550,11 +548,6 @@ repl:
      (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) ""
                                             (s-replace "\r\n" "" output))))
      (setf (rdd@ (quote ,repl) output) output)
-
-     ;; thread `output' through output hooks
-     ;; i.e., run all hooks on REPL output, each possibly modifying output
-     (cl-loop for fun in repl-driven-development-output-hook
-              do (setq output (funcall fun output)))
 
      (repl-driven-development--insert-or-echo (quote ,repl) output)))
 
@@ -806,20 +799,6 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
 
     See URL `http://www.alhassy.com/repl-driven-development' to learn more about
     RDD see examples and many gifs.")))
-
-(defvar repl-driven-development-output-hook nil
-  "A list of functions to execute after REPL output has been computed.
-
-Each function consumes a single argument: The output result, as a string.
-
-For example:
-
-     ;; I want “C-h e” to show eval result ---just as “C-x C-e” does.
-     (add-hook \\='repl-driven-development-output-hook
-               (lambda (output)
-                (let ((inhibit-message t))
-                  (message \"REPL⇒ %s\" output))
-                output))")
 
 (defun repl-driven-development--ignore-ansi-color-codes (string-with-codes)
   "Ignore ANSI color codes in STRING-WITH-CODES."
