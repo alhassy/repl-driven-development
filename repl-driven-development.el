@@ -148,6 +148,13 @@
 ;; TODO: Implement Read Protocol for Java.
 ;; TODO[Low Priority]: Implement pretty printing for Python.
 ;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (eg JSON.parse)
+;; TODO: terminal-repl-insert-last-output,
+;; terminal-repl-copy-last-output-to-clipboard,
+;; terminal-repl-show-last-input-and-output
+;; [An Org mode buffer with the last-input and last output, headings]
+;; TODO: Add precondition checks to each method.
+;; (cl-assert (symbolp repl))
+;; (cl-assert (stringp (rdd@ repl current-input)))
 
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
@@ -184,6 +191,8 @@
 
       ;; We can get rid of the prompt at the end with :prompt
       (repl-driven-development [C-x C-t] "bash" :prompt "^[^ ]*\\$")
+
+      (repl-driven-development [C-x C-t] terminal)
 
       ;; We can change the blinking colours via rdd@.
       (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
@@ -268,7 +277,7 @@
   (message repl-driven-development-version))
 
 (defmacro rdd@ (name property)
-  "Get/set PROPERTY under namespace CMD.
+  "Get/set PROPERTY under namespace NAME.
 
       Usage:
       (rdd@ \"foo\" name)                ;; ⇒ nil
@@ -419,79 +428,80 @@
   ### Misc Remarks #####################################################
   VSCode has a similar utility for making in-editor REPLs, by the
   same author: http://alhassy.com/making-vscode-itself-a-java-repl"
-  (-let [strip-out-C-style-comments&newlines
-         '(lambda (in) (thread-last
-                    in
-                    (s-replace-regexp "/\\*.\\*/" "")
-                    (s-replace-regexp "//.*$" "")
-                    (s-replace-regexp "\n" "")))]
-    (pcase cli
-      ('java
-       ;; JShell does semicolon insertion eagerly, so it things the following
-       ;; are three separate expressions! We can fix this by removing new lines.
-       `(repl-driven-development ,keys "jshell"
-                                 :name 'java-repl
-                                 :prompt "jshell>"
-                                 :input-rewrite-fn
-                                 ,strip-out-C-style-comments&newlines))
-      ;; Likewise JS does eager semicolon insertion.
-      ('javascript
-       `(repl-driven-development ,keys "node"
-                                 :name 'javascript-repl
-                                 :prompt ">"
-                                 :input-rewrite-fn
-                                 ,strip-out-C-style-comments&newlines))
-      ('terminal `(repl-driven-development ,keys "bash"
-                                           :name 'terminal-repl
-                                           :prompt "^[^ ]*\\$"))
-      ('python `(repl-driven-development--preconfigured-python-REPL ,keys))
-      (_ `(-let* (((repl . args) (s-split " " ,cli)))
-            ;; (repl-fun-name string)
-            (setf (rdd@ repl cmd) repl) ;; String
-            (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
-            (setf (rdd@ repl keybinding)
-                  (s-join " " (mapcar #'pp-to-string ,keys))) ;; String
-            ;; String: Space separated list
-            (setf (rdd@ repl docs) (s-join " " ,docs))
-            ;; Used to avoid scenarios where input is echoed thereby
-            ;; accidentally treating it as a repl output
-            (setf (rdd@ repl current-input) "") ;; String
-            (setf (rdd@ repl current-input/start) 0)
-            (setf (rdd@ repl current-input/end) 0)
-            (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
-            (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn)
-            (setf (rdd@ repl fun-name)
-                  (or ,name (intern (format "%s-repl" (rdd@ repl cmd)))))
+  (pcase cli
+    ('java
+     ;; JShell does semicolon insertion eagerly, so it things the following
+     ;; are three separate expressions! We can fix this by removing new lines.
+     `(repl-driven-development--preconfigured-java-REPL ,keys))
+    ;; Likewise JS does eager semicolon insertion.
+    ('javascript
+     `(repl-driven-development--preconfigured-javascript-REPL ,keys))
+    ('terminal
+     `(repl-driven-development--preconfigured-terminal-REPL ,keys))
+    ('python `(repl-driven-development--preconfigured-python-REPL ,keys))
+    (_ `(-let* (((repl . args) (s-split " " ,cli)))
+          ;; (repl-fun-name string)
+          (setf (rdd@ repl cmd) repl) ;; String
+          (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
+          (setf (rdd@ repl keybinding)
+                (s-join " " (mapcar #'pp-to-string ,keys))) ;; String
+          ;; String: Space separated list
+          (setf (rdd@ repl docs) (s-join " " ,docs))
+          ;; Used to avoid scenarios where input is echoed thereby
+          ;; accidentally treating it as a repl output
+          (setf (rdd@ repl current-input) "") ;; String
+          (setf (rdd@ repl current-input/start) 0)
+          (setf (rdd@ repl current-input/end) 0)
+          (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
+          (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn)
+          (setf (rdd@ repl fun-name)
+                (or ,name (intern (format "%s-repl" (rdd@ repl cmd)))))
 
-            (setf (rdd@ repl init) ,init)
-            (cl-assert (or (stringp ,init) (listp ,init)))
-            (when (listp ,init) (setq ,init (s-join "\n" ,init)))
-            (cl-assert (stringp ,init))
+          (setf (rdd@ repl init) ,init)
+          (cl-assert (or (stringp ,init) (listp ,init)))
+          (when (listp ,init) (setq ,init (s-join "\n" ,init)))
+          (cl-assert (stringp ,init))
 
-            (setf (rdd@ repl blink) ,blink)
-            ;; Identifier "repl-driven-development" is made unique by
-            ;; start-process.
-            (setf (rdd@ repl process)
-                  (apply #'start-process "repl-driven-development"
-                         nil repl args))
+          (setf (rdd@ repl blink) ,blink)
+          ;; Identifier "repl-driven-development" is made unique by
+          ;; start-process.
+          (setf (rdd@ repl process)
+                (apply #'start-process "repl-driven-development"
+                       nil repl args))
 
-            (setq docs
-                  (repl-driven-development--install-any-not-yet-installed-docs
-                   ,docs))
-            (eval (repl-driven-development--make-repl-function repl))
+          (setq docs
+                (repl-driven-development--install-any-not-yet-installed-docs
+                 ,docs))
+          (eval (repl-driven-development--make-repl-function repl))
 
-            (process-send-string (rdd@ repl process) ,init)
-            (process-send-string (rdd@ repl process) "\n")
+          (process-send-string (rdd@ repl process) ,init)
+          (process-send-string (rdd@ repl process) "\n")
 
-            ;; Callback: Write the actual output to the REPL buffer
-            ;; and emit overlay.
-            (set-process-filter
-             (rdd@ repl process)
-             (repl-driven-development--main-callback (intern repl)))
+          ;; Callback: Write the actual output to the REPL buffer
+          ;; and emit overlay.
+          (set-process-filter
+           (rdd@ repl process)
+           (repl-driven-development--main-callback (intern repl)))
 
-            ;; Return the REPL process to the user.
-            (rdd@ repl process))))))
+          ;; Return the REPL process to the user.
+          (rdd@ repl process)))))
 
+(defun repl-driven-development--preconfigured-terminal-REPL (keys)
+  "A Bash REPL configuration, bound to keybinding KEYS."
+  (repl-driven-development
+   keys
+   "bash"
+   :name 'terminal-repl
+   :prompt "^[^ ]*\\$"))
+
+(defun repl-driven-development--preconfigured-javascript-REPL (keys)
+  "A NodeJS REPL configuration, bound to keybinding KEYS."
+  (repl-driven-development
+   keys "node"
+   :name 'javascript-repl
+   :prompt ">"
+   :input-rewrite-fn
+   #'repl-driven-development--strip-out-C-style-comments&newlines))
 
 (defun repl-driven-development--preconfigured-python-REPL (keys)
   "A Python REPL configuration, bound to keybinding KEYS.
@@ -533,6 +543,23 @@ repl:
               (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
              (t result))))))
 
+(defun repl-driven-development--preconfigured-java-REPL (keys)
+  "A Java REPL configuration, bound to keybinding KEYS."
+  (repl-driven-development
+   keys
+   "jshell"
+   :name 'java-repl
+   :prompt "jshell>"
+   :input-rewrite-fn
+   #'repl-driven-development--strip-out-C-style-comments&newlines))
+
+(defun repl-driven-development--strip-out-C-style-comments&newlines (str)
+  "Strip out C-style single-line and multi-line comments from STR."
+  (thread-last
+    str
+    (s-replace-regexp "/\\*.\\*/" "")
+    (s-replace-regexp "//.*$" "")
+    (s-replace-regexp "\n" "")))
 
 (defun repl-driven-development--main-callback (repl)
   "Return the callback that works on REPL."
@@ -569,6 +596,8 @@ docs."
 
 The echo only happens when OUTPUT differs from REPL's input."
   (cl-assert (stringp output))
+  (cl-assert (symbolp repl))
+  (cl-assert (stringp (rdd@ repl current-input)))
   (pcase current-prefix-arg
     ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
             (insert " " (funcall
@@ -727,7 +756,8 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
 
 (defun repl-driven-development--make-repl-function-docstring (repl)
   "Make the docstring for a REPL function working with command CLI."
-  (-let [keys (rdd@ repl keybinding)]
+  (let ((keys (rdd@ repl keybinding))
+        (cmd (rdd@ repl cmd)))
     (setq repl (rdd@ repl fun-name))
     (lf-string
      "Executes the selected region, if any or otherwise the entire current line,
@@ -742,8 +772,8 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     You can execute arbitrary Lisp anywhere by pressing “C-x C-e”, you can
     insert the result with “C-u C-x C-e”, and see the output echoed in the
     mode-line and in the *Messages* buffer with “C-h e”.
-    Likewise, you can execute ${repl} by pressing “${keys}”, insert output with
-    “C-u ${keys}”, and see the output echoed near your cursor and in the
+    Likewise, you can execute “${cmd}” code by pressing “${keys}”, insert output
+    with “C-u ${keys}”, and see the output echoed near your cursor and in the
     *Messages* buffer with “C-h e”.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
