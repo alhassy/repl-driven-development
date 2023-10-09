@@ -168,6 +168,7 @@
       ;; Show me references to unbound symbols
       (elint-current-buffer)
       (my/load-file-in-new-emacs)
+      (outshine-mode)
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; A simple terminal REPL works as expected.
@@ -564,11 +565,6 @@ repl:
 (defun repl-driven-development--main-callback (repl)
   "Return the callback that works on REPL."
   `(lambda (process output)
-
-     ;; The *REPL* buffer shows things exactly as they'd look like
-     ;; in a standard interaction in the terminal.
-     (repl-driven-development--insertion-filter process output)
-
      ;; This is done to provide a richer, friendlier, interaction.
      ;; ^M at the end of line in Emacs is indicating a carriage return (\r)
      ;; followed by a line feed (\n).
@@ -836,24 +832,6 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     (insert string-with-codes)
     (ansi-color-apply-on-region (point-min) (point-max))
     (buffer-string)))
-
-(defun repl-driven-development--insertion-filter (proc string)
-  "Insert STRING into the buffer associated with PROC.
-
-Source:
-https://www.gnu.org/software/emacs/manual/html_node/elisp/Filter-Functions.html."
-  (when (and repl-driven-development--insert-into-repl-buffer
-             (buffer-live-p (process-buffer proc)))
-    (with-current-buffer (process-buffer proc)
-      (let ((moving (= (point) (process-mark proc))))
-        (save-excursion
-          (goto-char (process-mark proc))
-          (let (buffer-read-only)
-            ;; Main difference
-            (insert (repl-driven-development--ignore-ansi-color-codes string)))
-          (set-marker (process-mark proc) (point)))
-        (if moving (goto-char (process-mark proc)))))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'repl-driven-development)
