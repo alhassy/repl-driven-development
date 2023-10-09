@@ -168,7 +168,7 @@
       ;; Show me references to unbound symbols
       (elint-current-buffer)
       (my/load-file-in-new-emacs)
-      (outshine-mode)
+      (progn (outshine-mode) (outline-minor-mode))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; A simple terminal REPL works as expected.
@@ -263,6 +263,8 @@
       ;; Notice that the code is identend nicely.
       )
 
+;;; requires and package preamble
+
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
 (require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
@@ -286,7 +288,17 @@
       (rdd@ \"foo\" name)                ;; ⇒ 'Jasim"
   `(get (intern (format "%s" ,name)) (quote ,property)))
 
-(defvar repl-driven-development-echo-duration 5)
+;;; defvars
+
+(defvar repl-driven-development-echo-duration 5
+  "Amount of seconds to show the result overlay.")
+
+(defvar repl-driven-development-echo-output-in-modeline nil
+  "In addition to the overlays, should REPL output be emitted in the modeline?
+
+You can always use `C-h e' to see output in the *Messages* buffer.")
+
+;;; main entry point
 
 ;;;###autoload
 (cl-defmacro repl-driven-development
@@ -487,81 +499,7 @@
           ;; Return the REPL process to the user.
           (rdd@ repl process)))))
 
-(defun repl-driven-development--preconfigured-terminal-REPL (keys)
-  "A Bash REPL configuration, bound to keybinding KEYS."
-  (repl-driven-development
-   keys
-   "bash"
-   :name 'terminal-repl
-   :prompt "^[^ ]*\\$"))
-
-(defun repl-driven-development--preconfigured-javascript-REPL (keys)
-  "A NodeJS REPL configuration, bound to keybinding KEYS."
-  (repl-driven-development
-   keys "node"
-   :name 'javascript-repl
-   :prompt ">"
-   :input-rewrite-fn
-   #'repl-driven-development--strip-out-C-style-comments&newlines))
-
-(defun repl-driven-development--preconfigured-python-REPL (keys)
-  "A Python REPL configuration, bound to keybinding KEYS.
-
-This configuration fixes the following shortcomings of the default Python CLI
-repl:
-
-❌ The Python repl abruptly terminates def|class definitions when there is an
-  empty new line in their definition.
-✔ This configuration strips out all empty newlines.
-
-❌ The Python repl requires an extra new line after a def|class definition to
-  confirm that the definition has concluded.
-✔ This configuration automatically adds such extra new lines.
-
-❌ The Python repl emits nothing when a def|class declaration is submitted.
-✔ This configuration emits a “Defined ⋯” message, along with the declaration's
-   body."
-  (repl-driven-development
-   keys
-   "python3"
-   :prompt ">>>"
-   :name 'python-repl
-   :blink 'pulsar-red
-   ;; Remove empty lines: In the middle of a def|class, they abruptly terminate
-   ;; the def|class!
-   :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
-   ;; For some reason, Python (in Emacs shells) emits the input as part of the
-   ;; output, so let's chop it off.
-   ;; Default Python repl emits nothing on def|class declarations,
-   ;; let's change that.
-   :echo-rewrite-fn
-   (lambda (echo)
-     (let* ((input  (rdd@ "python3" current-input))
-            (result (s-chop-prefix input echo)))
-       (cond ((s-starts-with? "def" input)
-              (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
-             ((s-starts-with? "class" input)
-              (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
-             (t result))))))
-
-(defun repl-driven-development--preconfigured-java-REPL (keys)
-  "A Java REPL configuration, bound to keybinding KEYS."
-  (repl-driven-development
-   keys
-   "jshell"
-   :name 'java-repl
-   :prompt "jshell>"
-   :input-rewrite-fn
-   #'repl-driven-development--strip-out-C-style-comments&newlines))
-
-(defun repl-driven-development--strip-out-C-style-comments&newlines (str)
-  "Strip out C-style single-line and multi-line comments from STR."
-  (thread-last
-    str
-    (s-replace-regexp "/\\*.\\*/" "")
-    (s-replace-regexp "//.*$" "")
-    (s-replace-regexp "\n" "")))
-
+;;; main-callback: insert or echo
 (defun repl-driven-development--main-callback (repl)
   "Return the callback that works on REPL."
   `(lambda (process output)
@@ -573,19 +511,6 @@ repl:
      (setf (rdd@ (quote ,repl) output) output)
 
      (repl-driven-development--insert-or-echo (quote ,repl) output)))
-
-(defun repl-driven-development--install-any-not-yet-installed-docs (docs)
-  "Install any not-yet-installed DOCS; return a List<String> of the installed \
-docs."
-  (when docs
-    (require 'devdocs)
-    (cl-assert (stringp docs))
-    (setq docs (--reject (s-blank? it) (s-split " " docs)))
-    (cl-assert (listp docs))
-    (-let [installed (mapc #'f-base (f-entries devdocs-data-dir))]
-      (mapc (lambda (it) (unless (member it installed)
-                      (devdocs-install (list (cons 'slug it))))) docs))
-    docs))
 
 (defun repl-driven-development--insert-or-echo (repl output)
   "If there's a C-u, then insert the OUTPUT; else echo it in overlay.
@@ -629,11 +554,7 @@ The echo only happens when OUTPUT differs from REPL's input."
              :format  " ⮕ %s"
              :duration repl-driven-development-echo-duration)))))))
 
-(defvar repl-driven-development-echo-output-in-modeline nil
-  "In addition to the overlays, should REPL output be emitted in the modeline?
-
-You can always use `C-h e' to see output in the *Messages* buffer.")
-
+;;; make-repl-function
 (defun repl-driven-development--make-repl-function (repl)
   "Constructs code denoting a function that sends a region to a REPL process."
   `(progn
@@ -729,6 +650,20 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
                           region-beg
                           region-end)))))))))
 
+;;; docs-at-point
+
+(defun repl-driven-development--install-any-not-yet-installed-docs (docs)
+  "Install any not-yet-installed DOCS; return a List<String> of the installed \
+docs."
+  (when docs
+    (require 'devdocs)
+    (cl-assert (stringp docs))
+    (setq docs (--reject (s-blank? it) (s-split " " docs)))
+    (cl-assert (listp docs))
+    (-let [installed (mapc #'f-base (f-entries devdocs-data-dir))]
+      (mapc (lambda (it) (unless (member it installed)
+                      (devdocs-install (list (cons 'slug it))))) docs))
+    docs))
 
 (defun repl-driven-development--docs-at-point (docs)
   "Lookup documentation at point using the given DOCS."
@@ -749,6 +684,8 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
     (minibuffer-with-setup-hook
         `(lambda () (insert ,word))
       (call-interactively #'devdocs-lookup))))
+
+;;; docstrings
 
 (defun repl-driven-development--make-repl-function-docstring (repl)
   "Make the docstring for a REPL function working with command CLI."
@@ -835,5 +772,81 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'repl-driven-development)
+
+;;; pre-configured repls
+(defun repl-driven-development--preconfigured-terminal-REPL (keys)
+  "A Bash REPL configuration, bound to keybinding KEYS."
+  (repl-driven-development
+   keys
+   "bash"
+   :name 'terminal-repl
+   :prompt "^[^ ]*\\$"))
+
+(defun repl-driven-development--preconfigured-javascript-REPL (keys)
+  "A NodeJS REPL configuration, bound to keybinding KEYS."
+  (repl-driven-development
+   keys "node"
+   :name 'javascript-repl
+   :prompt ">"
+   :input-rewrite-fn
+   #'repl-driven-development--strip-out-C-style-comments&newlines))
+
+(defun repl-driven-development--preconfigured-python-REPL (keys)
+  "A Python REPL configuration, bound to keybinding KEYS.
+
+This configuration fixes the following shortcomings of the default Python CLI
+repl:
+
+❌ The Python repl abruptly terminates def|class definitions when there is an
+  empty new line in their definition.
+✔ This configuration strips out all empty newlines.
+
+❌ The Python repl requires an extra new line after a def|class definition to
+  confirm that the definition has concluded.
+✔ This configuration automatically adds such extra new lines.
+
+❌ The Python repl emits nothing when a def|class declaration is submitted.
+✔ This configuration emits a “Defined ⋯” message, along with the declaration's
+   body."
+  (repl-driven-development
+   keys
+   "python3"
+   :prompt ">>>"
+   :name 'python-repl
+   :blink 'pulsar-red
+   ;; Remove empty lines: In the middle of a def|class, they abruptly terminate
+   ;; the def|class!
+   :input-rewrite-fn (lambda (in) (concat (s-replace-regexp "^\s*\n" "" in) "\n\n\r"))
+   ;; For some reason, Python (in Emacs shells) emits the input as part of the
+   ;; output, so let's chop it off.
+   ;; Default Python repl emits nothing on def|class declarations,
+   ;; let's change that.
+   :echo-rewrite-fn
+   (lambda (echo)
+     (let* ((input  (rdd@ "python3" current-input))
+            (result (s-chop-prefix input echo)))
+       (cond ((s-starts-with? "def" input)
+              (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
+             ((s-starts-with? "class" input)
+              (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
+             (t result))))))
+
+(defun repl-driven-development--preconfigured-java-REPL (keys)
+  "A Java REPL configuration, bound to keybinding KEYS."
+  (repl-driven-development
+   keys
+   "jshell"
+   :name 'java-repl
+   :prompt "jshell>"
+   :input-rewrite-fn
+   #'repl-driven-development--strip-out-C-style-comments&newlines))
+
+(defun repl-driven-development--strip-out-C-style-comments&newlines (str)
+  "Strip out C-style single-line and multi-line comments from STR."
+  (thread-last
+    str
+    (s-replace-regexp "/\\*.\\*/" "")
+    (s-replace-regexp "//.*$" "")
+    (s-replace-regexp "\n" "")))
 
 ;;; repl-driven-development.el ends here
