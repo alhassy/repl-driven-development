@@ -151,6 +151,8 @@
 
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
+      ;; Testing setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (load-file "./testing-setup.el") ;; See my init.el
       (eval-buffer)
       ;; Style errors, package errors
       (my/show-errors)
@@ -159,71 +161,7 @@
       ;; Show me references to unbound symbols
       (elint-current-buffer)
       (my/load-file-in-new-emacs)
-
-      (progn ;; Execute the following setup code once
-        ;; Nearly instantaneous display of tooltips.
-        (setq tooltip-delay 0)
-
-        (save-excursion (package-buffer-info))
-
-        (use-package erefactor)
-
-        (display-fill-column-indicator-mode)
-        ;; (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
-        ;; (add-hook 'prog-mode-hook #'flycheck-mode).
-
-        ;; See errors/warnings in margin and in mode-line
-        (use-package flycheck)
-        (flycheck-mode)
-        ;; Interactively fix style issues: (checkdoc)
-        ;; (elisp-lint--checkdoc)   ⇒ Does even more style checks.
-
-        ;; checker for the metadata in Emacs Lisp files which are intended to be
-        ;; packages. That metadata includes the package description, its
-        ;; dependencies and more.
-        (use-package flycheck-package)
-        (flycheck-package-setup)
-
-        (use-package elisp-lint)
-        ;; (elisp-lint-file (buffer-file-name))
-        ;; ⇒ Reports lots of issues in C-h e
-
-        ;; Find errors with regex usage
-        (use-package relint)
-        (relint-current-buffer)
-
-        ;; TODO: Read
-        ;; https://github.com/alphapapa/emacs-package-dev-handbook#packaging
-        ;; https://github.com/emacs-eldev/eldev
-
-        (defun my/show-errors ()
-          (flycheck-mode)
-          (flycheck-list-errors)
-          (delete-other-windows)
-          (split-window-below 40)
-          (other-window 1)
-          (switch-to-buffer "*Flycheck errors*"))
-
-        (cl-defun my/load-file-in-new-emacs (&optional (filename (buffer-file-name)))
-          (thread-first
-            `(progn
-               (require 'package)
-               (setq package-archives '(("gnu"    . "http://elpa.gnu.org/packages/")
-                                        ("nongnu" . "https://elpa.nongnu.org/nongnu/")
-                                        ("melpa"  . "http://melpa.org/packages/")))
-               (package-refresh-contents)
-               (require 'use-package)
-               (package-install 'dash)
-               (find-file ,filename)
-               (mapcar (lambda (it) (package-install (car it)) (require (car it))) (package-desc-reqs (package-buffer-info)))
-               (byte-compile ,filename)
-               (load-file ,filename))
-            pp-to-string
-            (write-region nil "~/Downloads/minimal-init.el"))
-          (async-shell-command "emacs --eval '(load-file \"~/Downloads/minimal-init.el\")'"))
-        )
-
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; A simple terminal REPL works as expected.
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
