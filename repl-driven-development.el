@@ -4,7 +4,7 @@
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
 ;; Version: 1.0.8
-;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1"))
+;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
 ;; Homepage: http://alhassy.com/repl-driven-development
@@ -144,7 +144,6 @@
 ;; https://github.com/magnars/s.el
 
 ;; TODO: Add mini-tutorial, from pkg docs, to Github README.
-;; TODO: Implement Read Protocol for Java.
 ;; TODO[Low Priority]: Implement pretty printing for Python.
 ;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (eg JSON.parse)
 ;; TODO: terminal-repl-insert-last-output,
@@ -154,10 +153,13 @@
 ;; TODO: Add precondition checks to each method.
 ;; (cl-assert (symbolp repl))
 ;; (cl-assert (stringp (rdd@ repl current-input)))
+;;
+;; TODO: hierarchy.el
 
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
-      ;; Testing setup ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ⨾⨾ Testing setup ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+
       (load-file "./testing-setup.el") ;; See my init.el
       (eval-buffer)
       ;; Style errors, package errors
@@ -168,9 +170,9 @@
       (elint-current-buffer)
       (my/load-file-in-new-emacs)
       (progn (outshine-mode) (outline-minor-mode))
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      ;; A simple terminal REPL works as expected.
+      ⨾⨾ A simple terminal REPL works as expected ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
       echo -e "$(whoami): On $(date), I sit at $(pwd) pondering ... \n $(ls)"
 
@@ -194,6 +196,7 @@
 
       (repl-driven-development [C-x C-t] terminal)
 
+      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
       ;; We can change the blinking colours via rdd@.
       (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
       [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
@@ -201,6 +204,7 @@
       (setf (rdd@ "node" blink) 'pulsar-green)
       Object.keys({name: "mikle", 1: "one"})
 
+      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
       ;; We can use a preconfigured REPL.
       ;;
       ;; Notice associated buffer's name involves only the command "jshell",
@@ -216,6 +220,20 @@
       // Now print it out
       .forEach(x -> System.out.println(x))
 
+      // Let's make a type to model stuff we're working with
+      record Person(String name, int age) { }
+
+      // Let's write a super duper complex algorithm
+      List<Person> foo(String... names) { return Arrays.stream(names).map(n -> new Person(n, n.length())).toList(); }
+
+      // Let's run our algorithm and get *executable* outputs that can then be used for regression tests
+      foo("musa", "hamid") // C-x C-j shows me “human readable” results
+      // C-u C-x C-j shows me “java readable” code that can be used for regression tests
+      foo("musa", "hamid")
+      // ⇒ List.of(new Person("musa", 4), new Person("hamid", 5))
+
+
+      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
       ;; Likewise for NodeJS
       (repl-driven-development [C-x C-n] javascript)
       ;; Then submit:
@@ -223,6 +241,7 @@
       // yay, a comment in the middle
       .map(x => x % 3 == 0 ? "Fizz" : x)
 
+      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
       ;; Likewise for Python
       (repl-driven-development  [C-x C-p] python)
       ;; Send each line, one at a time.
@@ -271,6 +290,7 @@
 (require 'bind-key)        ;; Bind keys
 (require 'lf)              ;; Template strings with lf-string
 ;; [lf requires nil lexical binding!]
+(require 'peg)
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
@@ -438,8 +458,11 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
     other functions created by this macro.
 
   ### Misc Remarks #####################################################
+  For more documentation, and examples,
+  see URL `http://alhassy.com/repl-driven-development'.
+
   VSCode has a similar utility for making in-editor REPLs, by the
-  same author: http://alhassy.com/making-vscode-itself-a-java-repl"
+  same author: See URL `http://alhassy.com/making-vscode-itself-a-java-repl'."
   (pcase cli
     ('java
      ;; JShell does semicolon insertion eagerly, so it things the following
@@ -495,8 +518,9 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
            (rdd@ repl process)
            (repl-driven-development--main-callback (intern repl)))
 
-          ;; Return the REPL process to the user.
-          (rdd@ repl process)))))
+          ;; Return the REPL symbol to the user (whose symbol-plist can be used
+          ;; to get various information!)
+          repl))))
 
 ;;; main-callback: insert or echo
 (defun repl-driven-development--main-callback (repl)
@@ -591,7 +615,9 @@ By default, this method returns the human pretty-printing that the overlay echo
 mechanism uses.
 
 YOU SHOULD REDEFINE THIS METHOD, TO BE AN APPROPRIATE READ PROTOCOL.
-(If you care about how inserted code looks.)"
+(If you care about how inserted code looks.)
+
+For an example, see `repl-driven-development--java-read'."
        (interactive "sRead: ")
        (apply (rdd@ ,repl echo-rewrite-fn) (list str)))
 
@@ -608,7 +634,12 @@ To submit a region, use `%s'." (rdd@ repl fun-name))
          ,(intern (format "%s-display-most-recent-result" (rdd@ repl fun-name)))
          ()
        "Show most recent REPL result. With C-u prefix, result is shown in its \
-        own buffer."
+        own buffer.
+
+If you see “...” then chances are that you have exceeded the default truncation
+threshold for your REPL. Consider increasing the threshold, if possible, by
+reading the docs of your REPL. For an example, see
+`repl-driven-development--preconfigured-java-REPL'."
        (interactive)
        (if (not current-prefix-arg)
            (display-message-or-buffer (rdd@ ,repl output))
@@ -839,10 +870,22 @@ repl:
              (t result))))))
 
 (defun repl-driven-development--preconfigured-java-REPL (keys)
-"A Java REPL configuration, bound to keybinding KEYS.
+  "A Java REPL configuration, bound to keybinding KEYS.
 
-⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-﴾ Setting a Classpath ﴿
+✔ This REPL is aware of all JARs in the ~/.m2/repository; the location of
+external JARs installed via the mvn tool.
+
+✔ Notify me when imports succeed.
+
+✔ Show types of results.
+
+✔ JShell has a truncation for outputs exceeding 1k chars, we increase the
+  threshold to size 40k chars.
+
+Implementation details below.
+
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                            ﴾ Setting a Classpath ﴿
 
 The classpath lets jshell access non-standard-library code.
 
@@ -861,8 +904,8 @@ Note that this command resets the execution state, reloading any
 current snippets with the new classpath setting (or other
 environment setting).
 
-⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-﴾ JShell Feedback Modes ﴿
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                           ﴾ JShell Feedback Modes ﴿
 
 The built-in feedback modes cannot have their
 prompt|truncation|format changed, but we can inheirt from a
@@ -877,24 +920,29 @@ any feedback, and the type of a value is not shown.
 
     /set mode myNewMode normal -command
     /set feedback myNewMode
-    /help /set format  // There is extensive help on this command with /help /set format.
+    /help /set format  // There is extensive help on this command
+                      // with /help /set format.
 
-    /set format myNewMode display \"{pre}added import {name}{post}\" import-added
-    /set format myNewMode display \"{pre}re-added import {name}{post}\" import-modified,replaced
+    /set format myNewMode display \"{pre}added import {name}{post}\" \
+import-added
+    /set format myNewMode display \"{pre}re-added import {name}{post}\" \
+import-modified,replaced
 
-    import java.awt.Graphics // Submit this twice and see two distinct messages 🕹
+    import java.awt.Graphics // Submit this twice and see two distinct messages
 
 This is automatically part of the Emacs Java REPL.
 
 ⟅ ✔ Show types of results ⟆
 
-Let's also change the default “var ==> value” output to include the type of the resulting value.
+Let's also change the default “var ==> value” output to include the type of the
+resulting value.
 
     // The payload does not indicate the type of this thing,
     // I'd like to know what kind of data I'm working with!
     Locale.CANADA.getUnicodeLocaleAttributes() // $10 ==> []
 
-    /set format myNewMode result \"{type} {name} = {value}{post}\" added,modified,replaced-primary-ok
+    /set format myNewMode result \"{type} {name} = {value}{post}\" \
+added,modified,replaced-primary-ok
 
     2 + 4                                      // int $11 = 6
     String me = \"hello\"                      // Emits: String me ⇒ \"hello\"
@@ -902,42 +950,197 @@ Let's also change the default “var ==> value” output to include the type of 
 
 ⟅ ✔ Extended Truncation Limit ⟆
 
-We can increase the truncation as follows, this is done automatically for the Java REPL.
+We can increase the truncation as follows,
+this is done automatically for the Java REPL.
 
    /set truncation myNewMode 40000
    IntStream.range(0, 40000).mapToObj(x -> x).toList()
 
-⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-﴾ Useful Reading ﴿
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                               ﴾ Useful Reading ﴿
 
-- The excellent JShell Tutorial by Robert Field:
-  https://cr.openjdk.org/~rfield/tutorial/JShellTutorial.htmlA Gentle Intro to JShell:
-  https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/Java-JShell-Online-Commands-How-to-Tutorial-Exit
+- The excellent JShell Tutorial by Robert Field at URL
+  `https://cr.openjdk.org/~rfield/tutorial/JShellTutorial.html'.
+- A Gentle Intro to JShell at URL
+  `https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/Java-JShell-Online-Commands-How-to-Tutorial-Exit'.
 
-⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-﴾ Implementation Notes ﴿
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                            ﴾ Implementation Notes ﴿
 
 We do not use the “--startup JAVASE” option to import all Java SE packages by
 default; since the simplest call “List.of(1)” results in an ambiguity error:
-java.util.List and java.awt.List match.
-"
-(repl-driven-development
- keys
- ;; enable assertions, and add everything installed, via `mvn', in scope.
- (format "jshell --class-path %s --enable-preview -R -ea --feedback silent"
-         (concat ".:" (shell-command-to-string "find ~/.m2/repository -name \"*.jar\" -type f 2>/dev/null | tr '\n' ':'")))
- :name 'java-repl
- :prompt "jshell>"
- :input-rewrite-fn
- #'repl-driven-development--strip-out-C-style-comments&newlines
- :init "/set mode EmacsJavaMode normal -command
+java.util.List and java.awt.List match."
+  (repl-driven-development
+   keys
+   ;; enable assertions, and add everything installed, via `mvn', in scope.
+   (format "jshell --class-path %s --enable-preview -R -ea --feedback silent"
+           (concat ".:" (shell-command-to-string "find ~/.m2/repository -name \"*.jar\" -type f 2>/dev/null | tr '\n' ':'")))
+   :name 'java-repl
+   :prompt "jshell>"
+   :input-rewrite-fn
+   #'repl-driven-development--strip-out-C-style-comments&newlines
+   :init "/set mode EmacsJavaMode normal -command
 /set format EmacsJavaMode display \"{pre}added import {name}{post}\" import-added
 /set format EmacsJavaMode display \"{pre}re-added import {name}{post}\" import-modified,replaced
 /set format EmacsJavaMode result \"{type} {name} = {value}{post}\" added,modified,replaced-primary-ok
 /set truncation EmacsJavaMode 40000
 /set feedback EmacsJavaMode
-System.out.println(\"Enjoy Java with Emacs (｡◕‿◕｡))\")"))
+System.out.println(\"Enjoy Java with Emacs (｡◕‿◕｡))\")")
 
-;; TODO [Truncation; Low] https://github.com/xiongtx/eros/blob/master/eros.el#L202
+  (defalias 'java-repl-read #'repl-driven-development--java-read))
+
+;; TODO Consider using my own overlays, like I do for tooltips, instead of using
+;;      eros. Then, for example, I don't need to worry about this truncation
+;;      limitation: https://github.com/xiongtx/eros/blob/master/eros.el#L202
+;;      Then again, this truncation is fine
+;;      (since we have repl-display-most-recent-result) and eros is lovely.
+
+;;; READ Protocol for Java
+
+(defun repl-driven-development--java-read (a-pretty-printed-record)
+  "Read executable Java code from pretty-printed record representations.
+
+A-PRETTY-PRINTED-RECORD is a a string denoting pretty printed Java output.
+
+If called interactively via M-x, copies executable Java to clipboard; otherwise
+returns the executable Java as a string.
+
+Using PEGs; see URL `https://elpa.gnu.org/packages/peg.html'."
+  (interactive "sJava Read: ")
+  (let ((result (thread-last
+                  a-pretty-printed-record ;; Has shape “type name = value”.
+                  (s-replace-regexp "^[^ ]* [^ ]* = " "")
+                  repl-driven-development--parse-pretty-printed-java
+                  repl-driven-development--lisp-to-java)))
+    (if (called-interactively-p 'interactive)
+        (progn (kill-new result)
+               (message "Copied: %s" result))
+      (insert "\n")
+      result)))
+
+(defun repl-driven-development--parse-pretty-printed-java (&optional str)
+  "If called interactively, run the parser at point.
+If called from Lisp, run the parse on the given string STR.
+
+Return a sexp with info about the parsed item.
+
+⦉𝒯𝒾𝓅⦊ When actually implementing this parser, I enclosed the
+defun in (bind-key [M-p] ⋯).  Now I could quickly iterate on the
+parser: Make a small modification to the parser, have one of my
+test cases in the same buffer, and invoke M-p to parse it.  This
+let me see “how far” the parsing got and where it got stuck."
+  (interactive)
+  (with-peg-rules
+      ((expr (or structured-expr literal))
+       (structured-expr (or map list record number))
+       (list (or empty-list non-empty-list))
+       (empty-list "[]"
+                   `(val -- (list :type :list :items nil)))
+       (non-empty-list "[" expr (list (* "," (* [space]) structured-expr)) "]"
+                       `(first rest -- (list :type :list
+                                             :items (cons first rest))))
+       (map "{" (list (opt payloads)) "}"
+            `(entries -- (cons :type (cons :map (cons :entries entries)))))
+       (literal (substring (* [a-z A-Z 0-9 " \"-;!#%&'*+,./:;<=>?@[]^_`{|}~"])))
+       (record identifier "[" (opt payloads) "]"
+               `(k vs -- (list :type :record
+                               :name (plist-get k :value)
+                               :fields vs)))
+       (identifier (substring (+ (or [alpha] comma "-" [space])))
+                   `(val -- (list :type :string :value val)))
+       (comma    "," (not (and [space] (+ [alpha]) "=")))
+       (payloads (list payload (* (and "," (opt (+ [space])) payload))))
+       (payload identifier "=" (or structured-expr identifier)
+                `(k v -- (list :name (plist-get k :value) :value v)))
+       (number (substring (and (+ [digit]) (opt (and "." (+ [digit])))))
+               `(val -- (list :type :number :value (string-to-number val)))))
+    (if (called-interactively-p 'interactive)
+        (peg-run (peg expr)
+                 #'ignore
+                 (lambda (args) (insert " ;; ⇒ "
+                                   (pp-to-string (car (funcall args))))))
+      (with-temp-buffer
+        (insert str)
+        (goto-char (point-min))
+        (let (result)
+          ;; peg-run ⇒ Parse with matcher at point,
+          ;;           & run success|failure function.
+          (peg-run (peg expr) #'ignore
+                   (lambda (args) (setq result (car (funcall args)))))
+          result)))))
+
+(defun repl-driven-development--lisp-to-java (data)
+  "Convert the given Lisp sexp DATA into a JShell executable snippet."
+  (s-replace-regexp
+   "\n\\(,\\|)\\)" "\\1"
+   (pcase (plist-get data :type)
+     (:number (format "%s" (plist-get data :value)))
+     (:string (-let [it (plist-get data :value)]
+                (if (equal it "null")
+                    it
+                  ;; Escapes quotes.
+                  (pp-to-string it))))
+     (:list (thread-last (plist-get data :items)
+                         (mapcar #'repl-driven-development--lisp-to-java)
+                         (s-join ", ")
+                         (format "List.of(%s)")))
+     ;; Invariant: A :record type have :value in all fields.
+     (:record (thread-last
+                (plist-get data :fields)
+                (--map (repl-driven-development--lisp-to-java (plist-get it :value)))
+                (s-join ", ")
+                (format "new %s(%s)" (plist-get data :name))))
+     (:map (thread-last
+             (plist-get data :entries)
+             (--map (format "%s, %s"
+                            (plist-get it :name)
+                            (repl-driven-development--lisp-to-java
+                             (plist-get it :value))))
+             (s-join ", ")
+             (format "Map.of(%s)")))
+     (else (error "lisp-to-java: Unknown data type “%s”" else)))))
+
+(cl-flet ((java-read (str)
+            (thread-last
+              str
+              repl-driven-development--parse-pretty-printed-java
+              repl-driven-development--lisp-to-java)))
+  (require 'ert)
+  ;; Non-record *values* are read literally
+  (should (equal (java-read "123") "123"))
+  ;; Records with a single field become constructor calls on that field: As a number (if possible), otherwise as a string.
+  (should (equal (java-read  "Person[name=Musa]") "new Person(\"Musa\")"))
+  (should (equal (java-read  "Person[age=31.2]") "new Person(31.2)"))
+  ;; Record payloads can include spaces and commas
+  (should (equal (java-read "Person[name=Alhassy, Musa, the first, age=thirty and one, years=31]")
+                 "new Person(\"Alhassy, Musa, the first\", \"thirty and one\", 31)"))
+  ;; We can read nested records.
+  ;; For arbitrarly deep nesting, we cannot use regular expressions, and so we need to move to using PEGs.
+  (should (equal (java-read  "Person[name=Musa, child=Person[name=Yusuf]]") "new Person(\"Musa\", new Person(\"Yusuf\"))"))
+  (should (equal (java-read  "Person[name=Musa, child=Person[name=Yusuf], child=Person[name=Zaynab]]")
+                 "new Person(\"Musa\", new Person(\"Yusuf\"), new Person(\"Zaynab\"))"))
+  (should (equal (java-read  "Person[name=Hamid, child=Person[name=Musa, child=Person[name=Yusuf]]]")
+                 "new Person(\"Hamid\", new Person(\"Musa\", new Person(\"Yusuf\")))"))
+  (should (equal (java-read "Person[name=hamid, child=Person[name=musa, age=12]]") "new Person(\"hamid\", new Person(\"musa\", 12))"))
+  ;; We can read lists.
+  (should (equal (java-read "[1, 2, 3]") "List.of(1, 2, 3)"))
+  (should (equal (java-read "[]") "List.of()"))
+  (should (equal (java-read "[Person[name=Jasim, age=72, zindex=0.5], Person[name=Kathy, age=82, zindex=2.78], Person[name=Musa, age=31, zindex=3]]")
+                 "List.of(new Person(\"Jasim\", 72, 0.5), new Person(\"Kathy\", 82, 2.78), new Person(\"Musa\", 31, 3))"))
+  (should (equal (java-read "[[1], [2, 3], [4, 5, 6]]") "List.of(List.of(1), List.of(2, 3), List.of(4, 5, 6))"))
+  ;; We can mix the various structures (records & lists)
+  ;; TODO: (java-read "Person[children=[]]")
+  (should (equal (java-read "A[a=[B[b=[C[c=D[d=[E[e=hello]]]]]]]]")
+                 "new A(List.of(new B(List.of(new C(new D(List.of(new E(\"hello\"))))))))"))
+  ;; Null is known
+  (should (equal (java-read "Person[name=null]") "new Person(null)"))
+  ;; Maps are known
+  (should (equal (java-read "{}") "Map.of()"))
+  (should (equal (java-read "{a=1, b=2, c=3}") "Map.of(a, 1, b, 2, c, 3)"))
+  (should (equal (java-read "{a=Alice, b=Bob, c=Kathy}") "Map.of(a, \"Alice\", b, \"Bob\", c, \"Kathy\")"))
+  ;; TODO: Allow numbers as keys.
+  ;; {1=hello, 2=world}
+  ;; TODO: (java-read "Person[]")
+  )
 
 ;;; repl-driven-development.el ends here
