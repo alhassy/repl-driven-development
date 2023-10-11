@@ -215,6 +215,8 @@
       // Now print it out
       .forEach(x -> System.out.println(x))
 
+      IntStream.range(0, 40) .mapToObj(i -> i % 15 == 0 ? "FizzBuzz" : i % 3 == 0 ? "Fizz" : i % 5 == 0 ? "Buzz" : String.valueOf(i)).toList()
+
       // Let's make a type to model stuff we're working with
       record Person(String name, int age) { }
 

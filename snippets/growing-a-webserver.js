@@ -1055,8 +1055,7 @@ M-x goto-address-mode  ;; makes all URLs clickable
     (interactive)
     (delete-all-space)
     (insert "\n")
-    (indent-for-tab-command)
-    ))
+    (indent-for-tab-command)))
 
     Note: If you forget to close the sever, run “lso -i :3030” to find the pid
     then run “kill -9 PROCESS_ID”.
