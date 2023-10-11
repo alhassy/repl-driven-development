@@ -1,0 +1,179 @@
+#+export_file_name: ~/repl-driven-development/README.md
+#+title: Editor Integrated REPLs for all languages
+#+author: Musa Al-hassy
+#+email: alhassy@gmail.com
+#+options: toc:nil d:nil broken-links:t
+#+property: header-args :results none :eval never-export
+
+# (let ((org-export-use-babel nil) (org-export-with-broken-links t)) (org-mode) (org-md-export-to-markdown))
+# C-c C-e h o, *Then* use =grip= to see that this looks reasonable.
+
+* Top Matter :ignore:
+:PROPERTIES:
+:CUSTOM_ID: Top-Matter
+:END:
+#+html: <div align="center">
+# badge:repl-driven-development|1.0.8|informational|https://github.com/alhassy/repl-driven-development|Gnu-Emacs
+
+#+html: <h1>  Editor Integrated REPLs for all languages </h1>
+
+melpa:repl-driven-development
+
+tweet:https://github.com/alhassy/repl-driven-development
+badge:contributions|welcome|green|https://github.com/alhassy/repl-driven-development/issues
+
+badge:author|musa_al-hassy|purple|https://alhassy.github.io/|nintendo-3ds
+badge:|buy_me_a coffee|gray|https://www.buymeacoffee.com/alhassy|buy-me-a-coffee
+
+This library provides the Emacs built-in kbd:C-x_C-e behaviour for
+arbitrary languages, provided they have a REPL shell command.
+| *It provides a “send line to REPL process” command, for your language.* |
+#+html: </div>
+
+#+attr_html: :width 600px
+file:images/short_example.png
+#+TOC: headlines 2
+
+* Motivation
+:PROPERTIES:
+:CUSTOM_ID: motivation
+:END:
+
+Whenever reading/refactoring some code, if you can make some of it
+self-contained, then you can immediately try it out! No need to
+load your entire program; nor copy-paste into an external REPL.  The
+benefits of Emacs' built-in kbd:C-x_C-e for Lisp, and Lisp's Repl
+Driven Development philosophy, are essentially made possible for
+arbitrary languages (to some approximate degree, but not fully).
+
+Just as kbd:C-u_C-x_C-e inserts the resulting expression at the
+current cursour position, so too all =repl-driven-development=
+commands allow for a kbd:C-u prefix which inserts the result.
+This allows for a nice scripting experience where results
+are kept for future use.
+
+Finally, just as kbd:C-h_e shows you the =*Messages*= buffer
+where you can see the evaluations of your Emacs Lisp via
+kbd:C-x_C-e; likewise, kbd:C-h_e shows you the output results
+of any REPL command created by  =repl-driven-development=.
+
+* Official Manual
+:PROPERTIES:
+:CUSTOM_ID: official-manual
+:END:
+
+See http://alhassy.com/repl-driven-development
+
+kbd:C-h_o_repl-driven-development also has extensive docs,
+via a JavaScript server example.
+
+* Mini-Tutorial
+:PROPERTIES:
+:CUSTOM_ID: mini-tutorial
+:END:
+
+Often, while reading a README file, we will (1) copy a shell command, (2) open a
+terminal, and (3) paste the shell command to run it.  We can evaluate arbitrary
+regions in a shell in one step via kbd:C-x_C-t with:
+
+#+begin_src emacs-lisp :exports code :eval never-export
+   (repl-driven-development [C-x C-t] "bash")
+#+end_src
+
+
+For example, execute kbd:C-x_C-t anywhere on each line below and see results in an
+overlay, right by your cursor.
+
+#+begin_src shell
+  echo "It is $(date) and I am at $PWD, my name is $(whoami) and I have: $(ls)"
+
+  say "My name is $(whoami) and I like Emacs"
+#+end_src
+
+Notice as each line is sent to the Bash process, the line is highlighted briefly
+in yellow.  Moreover, you can hover over the text to see a tooltip with the
+resulting shell output.  Finally, if you invoke kbd:C-h_k_C-x_C-t you get help
+about this new kbd:C-x_C-t command, such as inserting results at point via
+kbd:C-u_C-x_C-t or to reset/refresh the current Bash process with kbd:C-u_-1_C-x_C-t.
+
+This also works for any command-line REPL; for example, for Python:
+
+#+begin_src emacs-lisp
+   (repl-driven-development [C-x C-p] "python3")
+#+end_src
+
+Then, we can submit the following Python snippets with kbd:C-x_C-p on each line.
+
+#+begin_src python
+  sum([1, 2, 3, 4])
+
+  list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
+#+end_src
+
+These work fine, however there are some shortcomings of this REPL.
+For example, echoing results could be prettier and it doesn't handle
+multi-line input very well.  You can address these issues using the various
+hooks / keyword arguments of the =repl-driven-development= macro.
+
+However, this package comes with preconfigured REPLS for: =python, terminal, java, javascript=.
+
+Simply use the name of these configurations:
+
+#+begin_src emacs-lisp
+  (repl-driven-development [C-x C-p] python)
+#+end_src
+
+Now we can submit the following, with kbd:C-x_C-p, with no issues:
+
+#+begin_src python
+  def square(x):
+    return x * x
+
+  square(5)
+#+end_src
+
+Since these new REPL commands are just Emacs functions, we can use
+several at the time, alternating between them.  For example:
+
+#+begin_src emacs-lisp
+  ;; C-x C-e on the next two lines
+  (repl-driven-development [C-x C-t] terminal)
+  (repl-driven-development [C-x C-p] python)
+#+end_src
+#+begin_src shell
+  echo Hello... > /tmp/o       # C-x C-t here
+#+end_src
+#+begin_src python
+  print(open("/tmp/o").read()) # C-x C-p here
+#+end_src
+#+begin_src shell
+  echo ...and bye >> /tmp/o    # C-x C-t again
+#+end_src
+#+begin_src python
+  print(open("/tmp/o").read()) # C-x C-p again
+#+end_src
+
+Let's conclude with a GUI example in Java.
+#+begin_src emacs-lisp
+  ;; Set “C-x C-j” to evaluate Java code in a background REPL.
+  (repl-driven-development [C-x C-j] "jshell")
+#+end_src
+#+begin_src java
+  // Select this Java snippet, then press “C-x C-j” to evaluate it
+  import javax.swing.*;
+  JOptionPane.showMessageDialog(new JFrame(){{setAlwaysOnTop(true);}}, "Super nice!")
+#+end_src
+
+We can use a preconfigured Java REPL, to remove the annoying “jshell>” prompt
+from overlay echos, handle multi-line input, and more.
+#+begin_src emacs-lisp
+  (repl-driven-development [C-x C-j] java)
+#+end_src
+#+begin_src java
+ // REPL result values are shown as overlays:
+ // See a list of 23 numbers, which are attached as a tooltip to this text.
+ IntStream.range(0, 23).forEach(x -> System.out.println(x))
+#+end_src
+
+For more documentation, and examples,
+see http://alhassy.com/repl-driven-development

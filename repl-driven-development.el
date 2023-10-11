@@ -139,7 +139,6 @@
 ;;
 ;;; Code:
 
-;; TODO: Add mini-tutorial, from pkg docs, to Github README.
 ;; TODO[Low Priority]: Implement pretty printing for Python.
 ;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (eg JSON.parse)
 ;; TODO: terminal-repl-insert-last-output,
@@ -170,10 +169,12 @@
       (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
       echo -e "$(whoami): On $(date), I sit at $(pwd) pondering ... \n $(ls)"
 
-      ;; Insert the result of the above shell command with C-u C-x C-t.
-
+      ;; The output is echoed via an overlay; however on the source to see it
+      ;; in a tooltip; invoke C-h e to see it in the *Messages* buffer;
       ;; Or see it in its own buffer with M-x ...
       (bash-repl-display-most-recent-result) ;; i.e., (rdd@ "bash" output)
+
+      ;; Insert the result of the above shell command with C-u C-x C-t.
 
       ;; We can also restart the repl... let's set some state
       export X=123
