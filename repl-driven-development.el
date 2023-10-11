@@ -4,7 +4,7 @@
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
 ;; Version: 1.0.8
-;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1"))
+;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29.1") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1") (hierarchy "0.6.0") (json-navigator "0.1.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
 ;; Homepage: http://alhassy.com/repl-driven-development
@@ -139,10 +139,6 @@
 ;;
 ;;; Code:
 
-;; String and list manipulation libraries
-;; https://github.com/magnars/dash.el
-;; https://github.com/magnars/s.el
-
 ;; TODO: Add mini-tutorial, from pkg docs, to Github README.
 ;; TODO[Low Priority]: Implement pretty printing for Python.
 ;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (eg JSON.parse)
@@ -153,8 +149,6 @@
 ;; TODO: Add precondition checks to each method.
 ;; (cl-assert (symbolp repl))
 ;; (cl-assert (stringp (rdd@ repl current-input)))
-;;
-;; TODO: hierarchy.el
 
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
@@ -290,7 +284,11 @@
 (require 'bind-key)        ;; Bind keys
 (require 'lf)              ;; Template strings with lf-string
 ;; [lf requires nil lexical binding!]
-(require 'peg)
+(require 'peg)              ;; Parsing expression grammars
+(require 'json)
+(require 'seq)
+(require 'hierarchy)        ;; Interactive, clickable, views of hierarchical data
+(require 'json-navigator)   ;; hierarchy.el specifically for JSON data
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
@@ -1100,6 +1098,7 @@ let me see “how far” the parsing got and where it got stuck."
              (format "Map.of(%s)")))
      (else (error "lisp-to-java: Unknown data type “%s”" else)))))
 
+
 (cl-flet ((java-read (str)
             (thread-last
               str
@@ -1109,24 +1108,24 @@ let me see “how far” the parsing got and where it got stuck."
   ;; Non-record *values* are read literally
   (should (equal (java-read "123") "123"))
   ;; Records with a single field become constructor calls on that field: As a number (if possible), otherwise as a string.
-  (should (equal (java-read  "Person[name=Musa]") "new Person(\"Musa\")"))
+  (should (equal (java-read  "Person[name=Jaafar]") "new Person(\"Jaafar\")"))
   (should (equal (java-read  "Person[age=31.2]") "new Person(31.2)"))
   ;; Record payloads can include spaces and commas
-  (should (equal (java-read "Person[name=Alhassy, Musa, the first, age=thirty and one, years=31]")
-                 "new Person(\"Alhassy, Musa, the first\", \"thirty and one\", 31)"))
+  (should (equal (java-read "Person[name=AsSaddiq, Jaafar, the first, age=thirty and one, years=31]")
+                 "new Person(\"AsSaddiq, Jaafar, the first\", \"thirty and one\", 31)"))
   ;; We can read nested records.
   ;; For arbitrarly deep nesting, we cannot use regular expressions, and so we need to move to using PEGs.
-  (should (equal (java-read  "Person[name=Musa, child=Person[name=Yusuf]]") "new Person(\"Musa\", new Person(\"Yusuf\"))"))
-  (should (equal (java-read  "Person[name=Musa, child=Person[name=Yusuf], child=Person[name=Zaynab]]")
-                 "new Person(\"Musa\", new Person(\"Yusuf\"), new Person(\"Zaynab\"))"))
-  (should (equal (java-read  "Person[name=Hamid, child=Person[name=Musa, child=Person[name=Yusuf]]]")
-                 "new Person(\"Hamid\", new Person(\"Musa\", new Person(\"Yusuf\")))"))
-  (should (equal (java-read "Person[name=hamid, child=Person[name=musa, age=12]]") "new Person(\"hamid\", new Person(\"musa\", 12))"))
+  (should (equal (java-read  "Person[name=Jaafar, child=Person[name=Yacoub]]") "new Person(\"Jaafar\", new Person(\"Yacoub\"))"))
+  (should (equal (java-read  "Person[name=Jaafar, child=Person[name=Yacoub], child=Person[name=Jasim]]")
+                 "new Person(\"Jaafar\", new Person(\"Yacoub\"), new Person(\"Jasim\"))"))
+  (should (equal (java-read  "Person[name=Hamid, child=Person[name=Jaafar, child=Person[name=Yacoub]]]")
+                 "new Person(\"Hamid\", new Person(\"Jaafar\", new Person(\"Yacoub\")))"))
+  (should (equal (java-read "Person[name=hamid, child=Person[name=Jaafar, age=12]]") "new Person(\"hamid\", new Person(\"Jaafar\", 12))"))
   ;; We can read lists.
   (should (equal (java-read "[1, 2, 3]") "List.of(1, 2, 3)"))
   (should (equal (java-read "[]") "List.of()"))
-  (should (equal (java-read "[Person[name=Jasim, age=72, zindex=0.5], Person[name=Kathy, age=82, zindex=2.78], Person[name=Musa, age=31, zindex=3]]")
-                 "List.of(new Person(\"Jasim\", 72, 0.5), new Person(\"Kathy\", 82, 2.78), new Person(\"Musa\", 31, 3))"))
+  (should (equal (java-read "[Person[name=Jasim, age=72, zindex=0.5], Person[name=Kathy, age=82, zindex=2.78], Person[name=Jaafar, age=31, zindex=3]]")
+                 "List.of(new Person(\"Jasim\", 72, 0.5), new Person(\"Kathy\", 82, 2.78), new Person(\"Jaafar\", 31, 3))"))
   (should (equal (java-read "[[1], [2, 3], [4, 5, 6]]") "List.of(List.of(1), List.of(2, 3), List.of(4, 5, 6))"))
   ;; We can mix the various structures (records & lists)
   ;; TODO: (java-read "Person[children=[]]")
@@ -1142,5 +1141,50 @@ let me see “how far” the parsing got and where it got stuck."
   ;; {1=hello, 2=world}
   ;; TODO: (java-read "Person[]")
   )
+
+;;; navigate-most-recent-result
+
+(cl-defun java-repl-navigate-most-recent-result (&optional (str (rdd@ 'jshell output)))
+  "Render STR, the last JShell output, as a clickable interactive hierarchy.
+
+For example,
+
+  ;; See a JSON dropdown of three objects, key-value pairs.
+  (java-repl-navigate-most-recent-result \"[Person[name=Jasim, age=72], Person[name=Kathy, age=82], Person[name=Jaafar, age=31]]\")
+
+  ;; See a deeply-nested object that you can inspect
+  (java-repl-navigate-most-recent-result \"Person[name=Jasim, age=72, child=Person[name=Hassan, age=22, child=Person[name=Abbas, age=31, child=null]]]\")
+
+﴾ Remark: We are not limited to textual output ﴿
+We can use the full power of Emacs to render data in any kind of format
+that is useful for the domain at hand. For example, rendering tabular data
+in an Org buffer; HTML data into a xwidget-webkit browser; or any kind of
+suitable major mode; or even opening an external program."
+  (interactive)
+  (with-temp-buffer
+    (thread-last
+      str ;; Has shape “type name = value”.
+      (s-replace-regexp "^[^ ]* [^ ]* = " "")
+      repl-driven-development--parse-pretty-printed-java
+      repl-driven-development--java-lisp-to-json-lisp
+      json-insert)
+    (goto-char (point-min))
+    (json-navigator-navigate-after-point)))
+
+(defun repl-driven-development--java-lisp-to-json-lisp (data)
+  "Convert the given Lisp sexp DATA into a JSON Lisp representation."
+  (pcase (plist-get data :type)
+    (:number (plist-get data :value))
+    (:string (plist-get data :value))
+    (:list (thread-last (plist-get data :items)
+                        (mapcar #'repl-driven-development--java-lisp-to-json-lisp)
+                        (seq--into-vector)))
+    (:record (thread-last
+               (plist-get data :fields)
+               (--map (list (intern (plist-get it :name))
+                            (repl-driven-development--java-lisp-to-json-lisp (plist-get it :value))))
+               (apply #'-concat)
+               (-cons* :type (plist-get data :name))))
+    (else (error "java-lisp-to-json-lisp: Unknown data type “%s”" else))))
 
 ;;; repl-driven-development.el ends here
