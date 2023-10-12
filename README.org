@@ -3,10 +3,10 @@
 #+author: Musa Al-hassy
 #+email: alhassy@gmail.com
 #+options: toc:nil d:nil broken-links:t
-#+property: header-args :results none :eval never-export
+#+property: header-args :results none :eval never-export :exports code
 
-# (let ((org-export-use-babel nil) (org-export-with-broken-links t)) (org-mode) (org-md-export-to-markdown))
-# *Then* use =grip= to see that this looks reasonable.
+# C-c C-e h o, *Then* use =grip= to see that this looks reasonable.
+# (shell-command "mv README.html README.md")
 
 * Top Matter :ignore:
 :PROPERTIES:
@@ -198,5 +198,5 @@ see http://alhassy.com/repl-driven-development
 
 #+html: <div align="center">
 #+html: <img src="http://alhassy.com/images/rdd-teaching-a-js-runtime-to-be-a-webserver.png" width=400 height=300 />
-#+html: [![REPL Driven Development :: Teaching a JavaScript runtime, incrementally, to be a web server 🍽️ 🔁 🤖](https://img.youtube.com/vi/b6Z3NQVn4lY/0.jpg)](https://www.youtube.com/watch?v=b6Z3NQVn4lY)
+#+html: <a href="https://www.youtube.com/watch?v=b6Z3NQVn4lY"><img src="https://img.youtube.com/vi/b6Z3NQVn4lY/0.jpg" /></a>
 #+html: </div>
