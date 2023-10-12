@@ -8,7 +8,7 @@
 
 <a href="https://alhassy.com/"><img src="https://img.shields.io/badge/author-musa_al--hassy-purple?logo=nintendo-3ds"></a> <a href="https://www.buymeacoffee.com/alhassy"><img src="https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee"></a>
 
-This library provides the Emacs built-in <kbd style="">C­x C­e</kbd> behaviour for arbitrary languages, provided they have a REPL shell command.
+This library provides the Emacs built-in <kbd style="">C─x C─e</kbd> behaviour for arbitrary languages, provided they have a REPL shell command.
 
 |                                                                          |
 |------------------------------------------------------------------------- |
@@ -36,7 +36,7 @@ This library provides the Emacs built-in <kbd style="">C­x C­e</kbd> behaviour
 
 # Motivation
 
-Whenever reading/refactoring some code, if you can make some of it self-contained, then you can immediately try it out! No need to load your entire program; nor copy-paste into an external REPL. The benefits of Emacs' built-in <kbd style="">C­x C­e</kbd> for Lisp, and Lisp's Repl Driven Development philosophy, are essentially made possible for arbitrary languages (to some approximate degree, but not fully).
+Whenever reading/refactoring some code, if you can make some of it self-contained, then you can immediately try it out! No need to load your entire program; nor copy-paste into an external REPL. The benefits of Emacs' built-in <kbd style="">C─x C─e</kbd> for Lisp, and Lisp's Repl Driven Development philosophy, are essentially made possible for arbitrary languages (to some approximate degree, but not fully).
 
 <div align="center">
 
@@ -44,9 +44,9 @@ Whenever reading/refactoring some code, if you can make some of it self-containe
 
 </div>
 
-Just as <kbd style="">C-u C-x C-e</kbd> inserts the resulting expression at the current cursour position, so too all `repl-driven-development` commands allow for a <kbd style="">C­u</kbd> prefix which inserts the result. This allows for a nice scripting experience where results are kept for future use.
+Just as <kbd style="">C-u C-x C-e</kbd> inserts the resulting expression at the current cursour position, so too all `repl-driven-development` commands allow for a <kbd style="">C─u</kbd> prefix which inserts the result. This allows for a nice scripting experience where results are kept for future use.
 
-Finally, just as <kbd style="">C­h e</kbd> shows you the `*Messages*` buffer where you can see the evaluations of your Emacs Lisp via <kbd style="">C­x C­e</kbd>; likewise, <kbd style="">C­h e</kbd> shows you the output results of any REPL command created by `repl-driven-development`.
+Finally, just as <kbd style="">C─h e</kbd> shows you the `*Messages*` buffer where you can see the evaluations of your Emacs Lisp via <kbd style="">C─x C─e</kbd>; likewise, <kbd style="">C─h e</kbd> shows you the output results of any REPL command created by `repl-driven-development`.
 
 
 # Official Manual
@@ -58,13 +58,13 @@ See <http://alhassy.com/repl-driven-development>
 
 # Mini-Tutorial
 
-Often, while reading a README file, we will (1) copy a shell command, (2) open a terminal, and (3) paste the shell command to run it. We can evaluate arbitrary regions in a shell in one step via <kbd style="">C­x C­t</kbd> with:
+Often, while reading a README file, we will (1) copy a shell command, (2) open a terminal, and (3) paste the shell command to run it. We can evaluate arbitrary regions in a shell in one step via <kbd style="">C─x C─t</kbd> with:
 
 ```emacs-lisp
    (repl-driven-development [C-x C-t] "bash")
 ```
 
-For example, execute <kbd style="">C­x C­t</kbd> anywhere on each line below and see results in an overlay, right by your cursor.
+For example, execute <kbd style="">C─x C─t</kbd> anywhere on each line below and see results in an overlay, right by your cursor.
 
 ```shell
   echo "It is $(date) and I am at $PWD, my name is $(whoami) and I have: $(ls)"
@@ -72,7 +72,7 @@ For example, execute <kbd style="">C­x C­t</kbd> anywhere on each line below a
   say "My name is $(whoami) and I like Emacs"
 ```
 
-Notice as each line is sent to the Bash process, the line is highlighted briefly in yellow. Moreover, you can hover over the text to see a tooltip with the resulting shell output. Finally, if you invoke <kbd style="">C-h k C-x C-t</kbd> you get help about this new <kbd style="">C­x C­t</kbd> command, such as inserting results at point via <kbd style="">C-u C-x C-t</kbd> or to reset/refresh the current Bash process with <kbd style="">C-u -1 C-x C-t</kbd>.
+Notice as each line is sent to the Bash process, the line is highlighted briefly in yellow. Moreover, you can hover over the text to see a tooltip with the resulting shell output. Finally, if you invoke <kbd style="">C-h k C-x C-t</kbd> you get help about this new <kbd style="">C─x C─t</kbd> command, such as inserting results at point via <kbd style="">C-u C-x C-t</kbd> or to reset/refresh the current Bash process with <kbd style="">C-u -1 C-x C-t</kbd>.
 
 This also works for any command-line REPL; for example, for Python:
 
@@ -80,7 +80,7 @@ This also works for any command-line REPL; for example, for Python:
    (repl-driven-development [C-x C-p] "python3")
 ```
 
-Then, we can submit the following Python snippets with <kbd style="">C­x C­p</kbd> on each line.
+Then, we can submit the following Python snippets with <kbd style="">C─x C─p</kbd> on each line.
 
 ```python
   sum([1, 2, 3, 4])
@@ -98,7 +98,7 @@ Simply use the name of these configurations:
   (repl-driven-development [C-x C-p] python)
 ```
 
-Now we can submit the following, with <kbd style="">C­x C­p</kbd>, with no issues:
+Now we can submit the following, with <kbd style="">C─x C─p</kbd>, with no issues:
 
 ```python
   def square(x):

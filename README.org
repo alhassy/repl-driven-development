@@ -26,7 +26,7 @@ badge:contributions|welcome|green|https://github.com/alhassy/repl-driven-develop
 badge:author|musa_al-hassy|purple|https://alhassy.com/|nintendo-3ds
 badge:|buy_me_a coffee|gray|https://www.buymeacoffee.com/alhassy|buy-me-a-coffee
 
-This library provides the Emacs built-in kbd:C­x_C­e behaviour for
+This library provides the Emacs built-in kbd:C─x_C─e behaviour for
 arbitrary languages, provided they have a REPL shell command.
 | *It provides a “send line to REPL process” command, for your language.* |
 #+html: </div>
@@ -47,7 +47,7 @@ file:rdd.gif
 Whenever reading/refactoring some code, if you can make some of it
 self-contained, then you can immediately try it out! No need to
 load your entire program; nor copy-paste into an external REPL.  The
-benefits of Emacs' built-in kbd:C­x_C­e for Lisp, and Lisp's Repl
+benefits of Emacs' built-in kbd:C─x_C─e for Lisp, and Lisp's Repl
 Driven Development philosophy, are essentially made possible for
 arbitrary languages (to some approximate degree, but not fully).
 
@@ -57,13 +57,13 @@ arbitrary languages (to some approximate degree, but not fully).
 
 Just as kbd:C-u_C-x_C-e inserts the resulting expression at the
 current cursour position, so too all =repl-driven-development=
-commands allow for a kbd:C­u prefix which inserts the result.
+commands allow for a kbd:C─u prefix which inserts the result.
 This allows for a nice scripting experience where results
 are kept for future use.
 
-Finally, just as kbd:C­h_e shows you the =*Messages*= buffer
+Finally, just as kbd:C─h_e shows you the =*Messages*= buffer
 where you can see the evaluations of your Emacs Lisp via
-kbd:C­x_C­e; likewise, kbd:C­h_e shows you the output results
+kbd:C─x_C─e; likewise, kbd:C─h_e shows you the output results
 of any REPL command created by  =repl-driven-development=.
 
 * Official Manual
@@ -83,14 +83,14 @@ via a JavaScript server example.
 
 Often, while reading a README file, we will (1) copy a shell command, (2) open a
 terminal, and (3) paste the shell command to run it.  We can evaluate arbitrary
-regions in a shell in one step via kbd:C­x_C­t with:
+regions in a shell in one step via kbd:C─x_C─t with:
 
 #+begin_src emacs-lisp :exports code :eval never-export
    (repl-driven-development [C-x C-t] "bash")
 #+end_src
 
 
-For example, execute kbd:C­x_C­t anywhere on each line below and see results in an
+For example, execute kbd:C─x_C─t anywhere on each line below and see results in an
 overlay, right by your cursor.
 
 #+begin_src shell
@@ -102,7 +102,7 @@ overlay, right by your cursor.
 Notice as each line is sent to the Bash process, the line is highlighted briefly
 in yellow.  Moreover, you can hover over the text to see a tooltip with the
 resulting shell output.  Finally, if you invoke kbd:C-h_k_C-x_C-t you get help
-about this new kbd:C­x_C­t command, such as inserting results at point via
+about this new kbd:C─x_C─t command, such as inserting results at point via
 kbd:C-u_C-x_C-t or to reset/refresh the current Bash process with kbd:C-u_-1_C-x_C-t.
 
 This also works for any command-line REPL; for example, for Python:
@@ -111,7 +111,7 @@ This also works for any command-line REPL; for example, for Python:
    (repl-driven-development [C-x C-p] "python3")
 #+end_src
 
-Then, we can submit the following Python snippets with kbd:C­x_C­p on each line.
+Then, we can submit the following Python snippets with kbd:C─x_C─p on each line.
 
 #+begin_src python
   sum([1, 2, 3, 4])
@@ -132,7 +132,7 @@ Simply use the name of these configurations:
   (repl-driven-development [C-x C-p] python)
 #+end_src
 
-Now we can submit the following, with kbd:C­x_C­p, with no issues:
+Now we can submit the following, with kbd:C─x_C─p, with no issues:
 
 #+begin_src python
   def square(x):
