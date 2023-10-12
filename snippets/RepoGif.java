@@ -482,7 +482,7 @@ class RepoGif {
 
 /*
 (setq frame-title-format "   Editor Integrated REPLs for all Languages    ᕦ( ᴼ ڡ ᴼ )ᕤ")
-(defun doom-modeline-buffer-file-name ()  "⇒ www.alhassy.com/repl-driven-development ⇐")
+(defun doom-modeline-buffer-file-name ()  " https://github.com/alhassy/repl-driven-development ")
 (eglot-java-mode +1)          ;; Inline overlays of arg names, syntax checks, typechecking
 (company-mode +1)             ;; Completions for methods
 (flyspell-mode -1)            ;; Don't check my spelling
@@ -491,4 +491,13 @@ class RepoGif {
 (keycast-header-line-mode +1) ;; Show my keybindings
 (bind-key "M-SPC" (cl-defun my/delete-vertical-space ()
     (interactive) (delete-all-space) (insert "\n\n") (indent-for-tab-command)  (c-electric-backspace 4)))
+
+;; Gif maker; needs privileges to capture screen.
+;;
+;; ⇒ Move the screen capture frame while recording.
+;; ⇒ Pause and restart recording, with optional inserted text messages.
+;; ⇒ Global hotkey (shift+space) to toggle pausing while recording
+(system-packages-ensure "licecap") ;; Use: ⌘-SPACE licecap
+
+Finally, ⌘-SPACE screenbrush. Use M-TAB to toggle it on/off; SHIFT for flashlight focus.
 */

@@ -147,22 +147,22 @@
 ;; [An Org mode buffer with the last-input and last output, headings]
 ;; TODO: Add precondition checks to each method.
 ;; (cl-assert (symbolp repl))
-;; (cl-assert (stringp (rdd@ repl current-input)))
+;; (cl-assert (stringp (rdd@ repl input)))
 
 (when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
 
       ⨾⨾ Testing setup ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
 
-      (load-file "./testing-setup.el") ;; See my init.el
-      (eval-buffer)
-      ;; Style errors, package errors
-      (my/show-errors)
-      ;; Byte-compiles the file with all warnings enabled.
-      (elisp-lint--byte-compile  (buffer-file-name))
-      ;; Show me references to unbound symbols
-      (elint-current-buffer)
-      (my/load-file-in-new-emacs)
-      (progn (outshine-mode) (outline-minor-mode))
+      ;; (load-file "./testing-setup.el") ;; See my init.el
+      ;; (eval-buffer)
+      ;; ;; Style errors, package errors
+      ;; (my/show-errors)
+      ;; ;; Byte-compiles the file with all warnings enabled.
+      ;; (elisp-lint--byte-compile  (buffer-file-name))
+      ;; ;; Show me references to unbound symbols
+      ;; (elint-current-buffer)
+      ;; (my/load-file-in-new-emacs)
+      ;; (progn (outshine-mode) (outline-minor-mode))
 
       ⨾⨾ A simple terminal REPL works as expected ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
 
@@ -172,7 +172,7 @@
       ;; The output is echoed via an overlay; however on the source to see it
       ;; in a tooltip; invoke C-h e to see it in the *Messages* buffer;
       ;; Or see it in its own buffer with M-x ...
-      (bash-repl-display-most-recent-result) ;; i.e., (rdd@ "bash" output)
+      (bash-repl-display-output) ;; i.e., (rdd@ "bash" output)
 
       ;; Insert the result of the above shell command with C-u C-x C-t.
 
@@ -265,17 +265,17 @@
       # Likewise for class-es:
 
       class MyClass():
-      i = 12345
+         i = 12345
 
-      def f(self):
-      return 'hello world'
+         def f(self):
+            return 'hello world'
 
 
       x = MyClass()
       x.i
       x.f()
       "
-      ;; Notice that the code is identend nicely.
+      ;; Notice that the code is indented nicely.
       )
 
 ;;; requires and package preamble
@@ -290,8 +290,6 @@
 (require 'peg)              ;; Parsing expression grammars
 (require 'json)
 (require 'seq)
-(require 'hierarchy)        ;; Interactive, clickable, views of hierarchical data
-(require 'json-navigator)   ;; hierarchy.el specifically for JSON data
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
@@ -485,9 +483,9 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
           (setf (rdd@ repl docs) (s-join " " ,docs))
           ;; Used to avoid scenarios where input is echoed thereby
           ;; accidentally treating it as a repl output
-          (setf (rdd@ repl current-input) "") ;; String
-          (setf (rdd@ repl current-input/start) 0)
-          (setf (rdd@ repl current-input/end) 0)
+          (setf (rdd@ repl input) "") ;; String
+          (setf (rdd@ repl input/start) 0)
+          (setf (rdd@ repl input/end) 0)
           (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
           (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn)
           (setf (rdd@ repl fun-name)
@@ -532,7 +530,9 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
      ;; followed by a line feed (\n).
      (setq output (s-trim (s-replace-regexp ,(rdd@ repl prompt) ""
                                             (s-replace "\r\n" "" output))))
-     (setf (rdd@ (quote ,repl) output) output)
+     ;; Output is always non-empty
+     (unless (s-blank? (s-trim output))
+       (setf (rdd@ (quote ,repl) output) output))
 
      (repl-driven-development--insert-or-echo (quote ,repl) output)))
 
@@ -542,9 +542,9 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
 The echo only happens when OUTPUT differs from REPL's input."
   (cl-assert (stringp output))
   (cl-assert (symbolp repl))
-  (cl-assert (stringp (rdd@ repl current-input)))
+  (cl-assert (stringp (rdd@ repl input)))
   (pcase current-prefix-arg
-    ('(4) (unless (equal output (s-trim (rdd@ repl current-input)))
+    ('(4) (unless (equal output (s-trim (rdd@ repl input)))
             (insert " " (funcall
                          (intern (format "%s-read"
                                          (rdd@ repl fun-name))) output))))
@@ -559,12 +559,12 @@ The echo only happens when OUTPUT differs from REPL's input."
                   (list (repl-driven-development--ignore-ansi-color-codes
                          output))))
      (unless (s-blank? (s-trim output))
-       (unless  (equal output (s-trim (rdd@ repl current-input)))
+       (unless  (equal output (s-trim (rdd@ repl input)))
          ;; Tooltips ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
          (mapc #'delete-overlay
-               (overlays-at (rdd@ repl current-input/start)))
-         (let ((overlay (make-overlay (rdd@ repl current-input/start)
-                                      (rdd@ repl current-input/end))))
+               (overlays-at (rdd@ repl input/start)))
+         (let ((overlay (make-overlay (rdd@ repl input/start)
+                                      (rdd@ repl input/end))))
            (overlay-put overlay 'help-echo output))
          ;; Messages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
          ;; I want “C-h e” to show eval result ---just as “C-x C-e” does.
@@ -626,13 +626,13 @@ For an example, see `repl-driven-development--java-read'."
        ,(format "Send STR to the REPL process, followed by a newline.
 
 To submit a region, use `%s'." (rdd@ repl fun-name))
-       (setf (rdd@ ,repl current-input) str)
+       (setf (rdd@ ,repl input) str)
        (process-send-string (rdd@ ,repl process)
                             (apply (rdd@ ,repl input-rewrite-fn) (list str)))
        (process-send-string (rdd@ ,repl process) "\n"))
 
      (defun
-         ,(intern (format "%s-display-most-recent-result" (rdd@ repl fun-name)))
+         ,(intern (format "%s-display-output" (rdd@ repl fun-name)))
          ()
        "Show most recent REPL result. With C-u prefix, result is shown in its \
         own buffer.
@@ -660,7 +660,7 @@ reading the docs of your REPL. For an example, see
           (pulsar-pulse-line))
 
         (pcase current-prefix-arg
-          (0  (,(intern (format "%s-display-most-recent-result"
+          (0  (,(intern (format "%s-display-output"
                                 (rdd@ repl fun-name)))))
           (-1 (,(intern (format "%s-restart" (rdd@ repl fun-name)))))
           ;; ('(4)  (insert " " output)) ;; C-u ;; handled when we actually have
@@ -674,8 +674,8 @@ reading the docs of your REPL. For an example, see
              (setq region-beg (point))
              (end-of-line)
              (setq region-end (point)))
-           (setf (rdd@ ,repl current-input/start) region-beg)
-           (setf (rdd@ ,repl current-input/end) region-end)
+           (setf (rdd@ ,repl input/start) region-beg)
+           (setf (rdd@ ,repl input/end) region-end)
            (,(intern (format "%s-submit" (rdd@ repl fun-name)))
             (s-trim-left (buffer-substring-no-properties
                           region-beg
@@ -752,7 +752,7 @@ docs."
     Do so by redefining `${repl}-read'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-          ﴾ C-u 0 ${keys}   ≈  `${repl}-display-most-recent-result' ﴿
+                 ﴾ C-u 0 ${keys}   ≈  `${repl}-display-output' ﴿
 
     Sometimes it may be useful to look at a large output in a dedicated buffer.
     However, the output of a command is also attached to the input via a
@@ -862,7 +862,7 @@ repl:
    ;; let's change that.
    :echo-rewrite-fn
    (lambda (echo)
-     (let* ((input  (rdd@ "python3" current-input))
+     (let* ((input  (rdd@ "python3" input))
             (result (s-chop-prefix input echo)))
        (cond ((s-starts-with? "def" input)
               (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
@@ -994,7 +994,7 @@ System.out.println(\"Enjoy Java with Emacs (｡◕‿◕｡))\")")
 ;;      eros. Then, for example, I don't need to worry about this truncation
 ;;      limitation: https://github.com/xiongtx/eros/blob/master/eros.el#L202
 ;;      Then again, this truncation is fine
-;;      (since we have repl-display-most-recent-result) and eros is lovely.
+;;      (since we have repl-display-output) and eros is lovely.
 
 ;;; READ Protocol for Java
 
@@ -1147,16 +1147,16 @@ let me see “how far” the parsing got and where it got stuck."
 
 ;;; navigate-most-recent-result
 
-(cl-defun java-repl-navigate-most-recent-result (&optional (str (rdd@ 'jshell output)))
+(cl-defun java-repl-navigate-output (&optional (str (rdd@ 'jshell output)))
   "Render STR, the last JShell output, as a clickable interactive hierarchy.
 
 For example,
 
   ;; See a JSON dropdown of three objects, key-value pairs.
-  (java-repl-navigate-most-recent-result \"[Person[name=Jasim, age=72], Person[name=Kathy, age=82], Person[name=Jaafar, age=31]]\")
+  (java-repl-navigate-output \"[Person[name=Jasim, age=72], Person[name=Kathy, age=82], Person[name=Jaafar, age=31]]\")
 
   ;; See a deeply-nested object that you can inspect
-  (java-repl-navigate-most-recent-result \"Person[name=Jasim, age=72, child=Person[name=Hassan, age=22, child=Person[name=Abbas, age=31, child=null]]]\")
+  (java-repl-navigate-output \"Person[name=Jasim, age=72, child=Person[name=Hassan, age=22, child=Person[name=Abbas, age=31, child=null]]]\")
 
 ﴾ Remark: We are not limited to textual output ﴿
 We can use the full power of Emacs to render data in any kind of format
@@ -1164,18 +1164,23 @@ that is useful for the domain at hand. For example, rendering tabular data
 in an Org buffer; HTML data into a xwidget-webkit browser; or any kind of
 suitable major mode; or even opening an external program."
   (interactive)
-  (with-temp-buffer
-    (thread-last
-      str ;; Has shape “type name = value”.
-      (s-replace-regexp "^[^ ]* [^ ]* = " "")
-      repl-driven-development--parse-pretty-printed-java
-      repl-driven-development--java-lisp-to-json-lisp
-      json-insert)
-    (goto-char (point-min))
-    (json-navigator-navigate-after-point)))
+  (if (and
+       (require 'hierarchy)        ;; Interactive, clickable, views of hierarchical data
+       (require 'json-navigator))   ;; hierarchy.el specifically for JSON data
+      (with-temp-buffer
+        (thread-last
+          str ;; Has shape “type name = value”.
+          (s-replace-regexp "^[^ ]* [^ ]* = " "")
+          repl-driven-development--parse-pretty-printed-java
+          repl-driven-development--java-lisp-to-json-lisp
+          json-insert)
+        (goto-char (point-min))
+        (json-navigator-navigate-after-point))
+    (message "Please delete ~/.emacs.d/elpa/hierarchy-*/hierarchy.elc")))
 
 (defun repl-driven-development--java-lisp-to-json-lisp (data)
   "Convert the given Lisp sexp DATA into a JSON Lisp representation."
+  (cl-assert (plist-member data :type))
   (pcase (plist-get data :type)
     (:number (plist-get data :value))
     (:string (plist-get data :value))
