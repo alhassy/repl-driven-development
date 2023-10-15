@@ -3,9 +3,9 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.8
+;; Version: 1.0.9
 ;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1") (hierarchy "0.6.0") (json-navigator "0.1.1"))
-;; Keywords: repl-driven-development, rdd, repl, lisp, java, python, ruby, programming, convenience
+;; Keywords: repl-driven-development, rdd, repl, lisp, eval, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
 ;; Homepage: http://alhassy.com/repl-driven-development
 
@@ -141,142 +141,16 @@
 
 ;; TODO[Low Priority]: Implement pretty printing for Python.
 ;; TODO[Low Priority]: Implement a simple Read Protocol for JS. (eg JSON.parse)
-;; TODO: terminal-repl-insert-last-output,
-;; terminal-repl-copy-last-output-to-clipboard,
-;; terminal-repl-show-last-input-and-output
+;; TODO: terminal-eval-insert-last-output,
+;; terminal-eval-copy-last-output-to-clipboard,
+;; terminal-eval-show-last-input-and-output
 ;; [An Org mode buffer with the last-input and last output, headings]
 ;; TODO: Add precondition checks to each method.
 ;; (cl-assert (symbolp repl))
 ;; (cl-assert (stringp (rdd@ repl input)))
-
-(when nil ⨾⨾ Rich Comment consisting of executable code to try things out.
-
-      ⨾⨾ Testing setup ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-
-      ;; (load-file "./testing-setup.el") ;; See my init.el
-      ;; (eval-buffer)
-      ;; ;; Style errors, package errors
-      ;; (my/show-errors)
-      ;; ;; Byte-compiles the file with all warnings enabled.
-      ;; (elisp-lint--byte-compile  (buffer-file-name))
-      ;; ;; Show me references to unbound symbols
-      ;; (elint-current-buffer)
-      ;; (my/load-file-in-new-emacs)
-      ;; (progn (outshine-mode) (outline-minor-mode))
-
-      ⨾⨾ A simple terminal REPL works as expected ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-
-      (repl-driven-development [C-x C-t] "bash" :blink 'pulsar-green)
-      echo -e "$(whoami): On $(date), I sit at $(pwd) pondering ... \n $(ls)"
-
-      ;; The output is echoed via an overlay; however on the source to see it
-      ;; in a tooltip; invoke C-h e to see it in the *Messages* buffer;
-      ;; Or see it in its own buffer with M-x ...
-      (bash-repl-display-output) ;; i.e., (rdd@ "bash" output)
-
-      ;; Insert the result of the above shell command with C-u C-x C-t.
-
-      ;; We can also restart the repl... let's set some state
-      export X=123
-      echo $X
-      ;; Now restart it with C-u -1 C-x C-t
-      echo $X
-      ;; C-x C-t on the above line emits no value
-
-      ;; Init code works upon initialisation, neato!
-      (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)")
-
-      ;; We can get rid of the prompt at the end with :prompt
-      (repl-driven-development [C-x C-t] "bash" :prompt "^[^ ]*\\$")
-
-      (repl-driven-development [C-x C-t] terminal)
-
-      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-      ;; We can change the blinking colours via rdd@.
-      (repl-driven-development [C-x C-n] "node" :blink 'pulsar-blue)
-      [...Array(14).keys()].map(x => x % 3 == 0 ? "Fizz" : x)
-      ;; Change colour with C-x C-e, then C-x C-n on the line after.
-      (setf (rdd@ "node" blink) 'pulsar-green)
-      Object.keys({name: "mikle", 1: "one"})
-
-      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-      ;; We can use a preconfigured REPL.
-      ;;
-      ;; Notice associated buffer's name involves only the command "jshell",
-      ;; not the args. See it via C-u 0 C-x C-j.
-      (repl-driven-development [C-x C-j] java)
-      ;;
-      ;; This allows us to submit multi-line input seamlessly.
-      ;; Select the following 6 lines, then submit this region with C-x C-j
-      IntStream
-      /* a multi-line
-      * comment */
-      .range(0, 23)
-      // Now print it out
-      .forEach(x -> System.out.println(x))
-
-      IntStream.range(0, 40) .mapToObj(i -> i % 15 == 0 ? "FizzBuzz" : i % 3 == 0 ? "Fizz" : i % 5 == 0 ? "Buzz" : String.valueOf(i)).toList()
-
-      // Let's make a type to model stuff we're working with
-      record Person(String name, int age) { }
-
-      // Let's write a super duper complex algorithm
-      List<Person> foo(String... names) { return Arrays.stream(names).map(n -> new Person(n, n.length())).toList(); }
-
-      // Let's run our algorithm and get *executable* outputs that can then be used for regression tests
-      foo("musa", "hamid") // C-x C-j shows me “human readable” results
-      // C-u C-x C-j shows me “java readable” code that can be used for regression tests
-      foo("musa", "hamid")
-      // ⇒ List.of(new Person("musa", 4), new Person("hamid", 5))
-
-
-      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-      ;; Likewise for NodeJS
-      (repl-driven-development [C-x C-n] javascript)
-      ;; Then submit:
-      [...Array(40).keys()]
-      // yay, a comment in the middle
-      .map(x => x % 3 == 0 ? "Fizz" : x)
-
-      ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-      ;; Likewise for Python
-      (repl-driven-development  [C-x C-p] python)
-      ;; Send each line, one at a time.
-      "
-      1 + 2 * 3
-
-      def foo(x): return x*x
-
-      foo(5)
-
-      list(map(lambda i: 'Fizz'*(not i%3)+'Buzz'*(not i%5) or i, range(1,101)))
-
-      # (Above shows Result Truncated due to my use of eros, which has this limit.
-      # TODO[Low Priority]: Fix this.)
-      #
-      # We can do multi-line def ---The quotes are to allow me to indent,
-      # otherwise my aggressive-formatter strips the whitespace away.
-
-      def square(x):
-      return x * x
-
-      square(5)
-
-      # Likewise for class-es:
-
-      class MyClass():
-         i = 12345
-
-         def f(self):
-            return 'hello world'
-
-
-      x = MyClass()
-      x.i
-      x.f()
-      "
-      ;; Notice that the code is indented nicely.
-      )
+;; TODO: Make eval-last-sexp, but allow rdd macro to consume key :backward-sexp.
+;; For example, in Java backward-sexp is not that helpful, whereas
+;; M-a in java-mode is bound to the useful c-beginning-of-statement.
 
 ;;; requires and package preamble
 
@@ -449,12 +323,12 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
     Intentionally meant for human friendly pretty-printing, not for
     a READ protocol. Those serve different goals.
     The default READ protocol is this echo-rewrite-fn.
-    Enter “M-x .*-repl-read” to see the docs of the READ protocol
+    Enter “M-x .*-read” to see the docs of the READ protocol
     for any REPL defined with this macro.
 
   - NAME [Symbol]: The name of the function associated to the keybinding
-    KEYS. By default, the name is “CLI-repl”. This is used to namespace all
-    other functions created by this macro.
+    KEYS. By default, the name is “CLI-eval”. This is used to namespace
+    almost all other functions created by this macro.
 
   ### Misc Remarks #####################################################
   For more documentation, and examples,
@@ -489,7 +363,7 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
           (setf (rdd@ repl input-rewrite-fn) ,input-rewrite-fn)
           (setf (rdd@ repl echo-rewrite-fn) ,echo-rewrite-fn)
           (setf (rdd@ repl fun-name)
-                (or ,name (intern (format "%s-repl" (rdd@ repl cmd)))))
+                (or ,name (intern (format "%s-eval" (rdd@ repl cmd)))))
 
           (setf (rdd@ repl init) ,init)
           (cl-assert (or (stringp ,init) (listp ,init)))
@@ -506,7 +380,7 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
           (setq docs
                 (repl-driven-development--install-any-not-yet-installed-docs
                  ,docs))
-          (eval (repl-driven-development--make-repl-function repl))
+          (eval (repl-driven-development--make-eval-function repl))
 
           (process-send-string (rdd@ repl process) ,init)
           (process-send-string (rdd@ repl process) "\n")
@@ -578,8 +452,8 @@ The echo only happens when OUTPUT differs from REPL's input."
              :format  " ⮕ %s"
              :duration repl-driven-development-echo-duration)))))))
 
-;;; make-repl-function
-(defun repl-driven-development--make-repl-function (repl)
+;;; make-eval-function
+(defun repl-driven-development--make-eval-function (repl)
   "Constructs code denoting a function that sends a region to a REPL process."
   `(progn
      ;; TODO: Make a defun with a callback for repl testing a la
@@ -603,6 +477,56 @@ The echo only happens when OUTPUT differs from REPL's input."
        (interactive)
        (repl-driven-development--docs-at-point (quote ,(rdd@ repl docs))))
 
+     (defun ,(intern (format "%s-buffer" (rdd@ repl fun-name))) ()
+       ,(format "Execute the accessible portion of current buffer as %s code.
+
+You can use \\[narrow-to-region] to limit the part of buffer to be evaluated."
+                (rdd@ repl cmd))
+       (interactive)
+       (mark-whole-buffer)
+       (call-interactively (rdd@ repl fun-name)))
+
+     (defun ,(intern (format "%s-defun" (rdd@ repl fun-name))) ()
+       ,(format "Evaluate innermost defun at point.
+
+This method is only useful in a buffer whose major mode supports “%s” code.
+
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                     ﴾ Top-Level Definitions, or “Defuns” ﴿
+
+In Emacs, a major definition at the top level in a buffer, such
+as a function or class, is called a “defun”.
+
+Just as “M-a, M-e, M-h” move to the start of a paragraph, end of a
+paragraph, and select a paragraph, so to the “C-M-𝓍” forms are for
+defuns:
+
+⇒ \\[beginning-of-defun] and \\[end-of-defun] to move to the start/end of a defun.
+⇒ \\[mark-defun] to highlight the current defun/class
+  ↣ If mark is active, it extends the region until the end of the next defun.
+⇒ \\[imenu] gives you an interactive menu to see all defuns and to jump to them.
+
+Note: Programming modes generally bind “M-a” and “M-e” to move forward and
+backward between semantic units of code, e.g., statements.
+
+Useful tip: \\[comment-dwim] inserts a new comment, or toggles commenting a selection.
+
+⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
+                         ﴾ Subexpressions, or “Sexps” ﴿
+
+Emacs calls “sexp” any subexpression that is enclosed in matching delimiters,
+such as (parentheses), [brackets], {braces}, \"quotes\", or is a number, or a
+single identifer.
+
+We can use \\[backward-sexp], \\[forward-sexp], \\[kill-sexp], \\[mark-sexp] / “C-M-SPC” to move backward, forward, kill,
+and highlight sexps.
+
+For example, in front of a {braced code fragment}, press \\[mark-sexp] to highlight
+that entire fragment. In front of a word, \\[mark-sexp] highlights just that word."
+                (rdd@ repl cmd))
+       (interactive)
+        (mark-defun) (call-interactively (rdd@ repl fun-name)))
+
      (defun ,(intern (format "%s-read" (rdd@ repl fun-name))) (str)
        "Read STR into code executable by the REPL.
 
@@ -622,13 +546,15 @@ For an example, see `repl-driven-development--java-read'."
        (interactive "sRead: ")
        (apply (rdd@ ,repl echo-rewrite-fn) (list str)))
 
-     (defun ,(intern (format "%s-submit" (rdd@ repl fun-name))) (str)
-       ,(format "Send STR to the REPL process, followed by a newline.
+     (defun ,(intern (format "%s-string" (rdd@ repl fun-name))) (string)
+       ,(format "Send STRING to the %s process, followed by a newline, to be executed.
 
-To submit a region, use `%s'." (rdd@ repl fun-name))
-       (setf (rdd@ ,repl input) str)
+To submit a region, use `%s'."
+                (rdd@ repl cmd)
+                (rdd@ repl fun-name))
+       (setf (rdd@ ,repl input) string)
        (process-send-string (rdd@ ,repl process)
-                            (apply (rdd@ ,repl input-rewrite-fn) (list str)))
+                            (apply (rdd@ ,repl input-rewrite-fn) (list string)))
        (process-send-string (rdd@ ,repl process) "\n"))
 
      (defun
@@ -651,7 +577,7 @@ reading the docs of your REPL. For an example, see
      (bind-key*
       (rdd@ ,repl keybinding)
       (defun ,(rdd@ repl fun-name) (region-beg region-end)
-        ,(repl-driven-development--make-repl-function-docstring repl)
+        ,(repl-driven-development--make-eval-function-docstring repl)
         (interactive "r")
 
         (require 'pulsar)
@@ -676,7 +602,7 @@ reading the docs of your REPL. For an example, see
              (setq region-end (point)))
            (setf (rdd@ ,repl input/start) region-beg)
            (setf (rdd@ ,repl input/end) region-end)
-           (,(intern (format "%s-submit" (rdd@ repl fun-name)))
+           (,(intern (format "%s-string" (rdd@ repl fun-name)))
             (s-trim-left (buffer-substring-no-properties
                           region-beg
                           region-end)))))))))
@@ -718,14 +644,14 @@ docs."
 
 ;;; docstrings
 
-(defun repl-driven-development--make-repl-function-docstring (repl)
+(defun repl-driven-development--make-eval-function-docstring (repl)
   "Make the docstring for a REPL function working with command CLI."
   (let ((keys (rdd@ repl keybinding))
         (cmd (rdd@ repl cmd)))
     (setq repl (rdd@ repl fun-name))
     (lf-string
      "Executes the selected region, if any or otherwise the entire current line,
-    and evaluates it with the command-line tool “${repl}”.
+    and evaluates it with the command-line tool “${cmd}”.
 
     Output is shown as an overlay at the current cursor position.
     It is shown for `repl-driven-development-echo-duration' many seconds.
@@ -733,12 +659,14 @@ docs."
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
                              ﴾ Familiar Workflow ﴿
 
-    You can execute arbitrary Lisp anywhere by pressing “C-x C-e”, you can
+    You can execute arbitrary Lisp anywhere by pressing \\[eval-last-sexp], you can
     insert the result with “C-u C-x C-e”, and see the output echoed in the
-    mode-line and in the *Messages* buffer with “C-h e”.
+    mode-line and in the *Messages* buffer with \\[view-echo-area-messages].
     Likewise, you can execute “${cmd}” code by pressing “${keys}”, insert output
     with “C-u ${keys}”, and see the output echoed near your cursor and in the
     *Messages* buffer with “C-h e”.
+
+    Other familiar functions include `${repl}-defun', `${repl}-buffer', and `${repl}-string'.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
                        ﴾ C-u ${keys}  ≈  Insert result ﴿
@@ -784,9 +712,6 @@ docs."
     command for 3 seconds does not block Emacs.
 
     ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
-    From Lisp, consider using `${repl}-submit'.
-
-    ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
                                   ﴾ See also ﴿
 
     See `repl-driven-development' for more useful docs.
@@ -810,14 +735,14 @@ docs."
   (repl-driven-development
    keys
    "bash"
-   :name 'terminal-repl
+   :name 'terminal-eval
    :prompt "^[^ ]*\\$"))
 
 (defun repl-driven-development--preconfigured-javascript-REPL (keys)
   "A NodeJS REPL configuration, bound to keybinding KEYS."
   (repl-driven-development
    keys "node"
-   :name 'javascript-repl
+   :name 'javascript-eval
    :prompt ">"
    :input-rewrite-fn
    #'repl-driven-development--strip-out-C-style-comments&newlines))
@@ -851,7 +776,7 @@ repl:
    keys
    "python3"
    :prompt ">>>"
-   :name 'python-repl
+   :name 'python-eval
    :blink 'pulsar-red
    ;; Remove empty lines: In the middle of a def|class, they abruptly terminate
    ;; the def|class!
@@ -976,7 +901,7 @@ java.util.List and java.awt.List match."
    ;; enable assertions, and add everything installed, via `mvn', in scope.
    (format "jshell --class-path %s --enable-preview -R -ea --feedback silent"
            (concat ".:" (shell-command-to-string "find ~/.m2/repository -name \"*.jar\" -type f 2>/dev/null | tr '\n' ':'")))
-   :name 'java-repl
+   :name 'java-eval
    :prompt "jshell>"
    :input-rewrite-fn
    #'repl-driven-development--strip-out-C-style-comments&newlines
@@ -988,7 +913,7 @@ java.util.List and java.awt.List match."
 /set feedback EmacsJavaMode
 System.out.println(\"Enjoy Java with Emacs (｡◕‿◕｡))\")")
 
-  (defalias 'java-repl-read #'repl-driven-development--java-read))
+  (defalias 'java-read #'repl-driven-development--java-read))
 
 ;; TODO Consider using my own overlays, like I do for tooltips, instead of using
 ;;      eros. Then, for example, I don't need to worry about this truncation
@@ -1147,16 +1072,16 @@ let me see “how far” the parsing got and where it got stuck."
 
 ;;; navigate-most-recent-result
 
-(cl-defun java-repl-navigate-output (&optional (str (rdd@ 'jshell output)))
+(cl-defun java-eval-navigate-output (&optional (str (rdd@ 'jshell output)))
   "Render STR, the last JShell output, as a clickable interactive hierarchy.
 
 For example,
 
   ;; See a JSON dropdown of three objects, key-value pairs.
-  (java-repl-navigate-output \"[Person[name=Jasim, age=72], Person[name=Kathy, age=82], Person[name=Jaafar, age=31]]\")
+  (java-eval-navigate-output \"[Person[name=Jasim, age=72], Person[name=Kathy, age=82], Person[name=Jaafar, age=31]]\")
 
   ;; See a deeply-nested object that you can inspect
-  (java-repl-navigate-output \"Person[name=Jasim, age=72, child=Person[name=Hassan, age=22, child=Person[name=Abbas, age=31, child=null]]]\")
+  (java-eval-navigate-output \"Person[name=Jasim, age=72, child=Person[name=Hassan, age=22, child=Person[name=Abbas, age=31, child=null]]]\")
 
 ﴾ Remark: We are not limited to textual output ﴿
 We can use the full power of Emacs to render data in any kind of format
