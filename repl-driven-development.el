@@ -151,6 +151,7 @@
 ;; TODO: Make eval-last-sexp, but allow rdd macro to consume key :backward-sexp.
 ;; For example, in Java backward-sexp is not that helpful, whereas
 ;; M-a in java-mode is bound to the useful c-beginning-of-statement.
+;; TODO: Make *-eval-expression
 
 ;;; requires and package preamble
 
@@ -504,12 +505,16 @@ defuns:
 ⇒ \\[beginning-of-defun] and \\[end-of-defun] to move to the start/end of a defun.
 ⇒ \\[mark-defun] to highlight the current defun/class
   ↣ If mark is active, it extends the region until the end of the next defun.
+  ↣ This selects the current class, or “topmost defun”, if point is outside
+    a function but inside a class (e.g., in Java).
 ⇒ \\[imenu] gives you an interactive menu to see all defuns and to jump to them.
 
 Note: Programming modes generally bind “M-a” and “M-e” to move forward and
 backward between semantic units of code, e.g., statements.
 
-Useful tip: \\[comment-dwim] inserts a new comment, or toggles commenting a selection.
+Useful tips:
+1. \\[comment-dwim] inserts a new comment, or toggles commenting a selection.
+2. \\[mark-word] selects the current word; repeated calls select more words.
 
 ⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾⨾
                          ﴾ Subexpressions, or “Sexps” ﴿
@@ -911,6 +916,7 @@ java.util.List and java.awt.List match."
 /set format EmacsJavaMode result \"{type} {name} = {value}{post}\" added,modified,replaced-primary-ok
 /set truncation EmacsJavaMode 40000
 /set feedback EmacsJavaMode
+import javax.swing.*;
 System.out.println(\"Enjoy Java with Emacs (｡◕‿◕｡))\")")
 
   (defalias 'java-read #'repl-driven-development--java-read))
