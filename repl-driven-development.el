@@ -485,7 +485,7 @@ You can use \\[narrow-to-region] to limit the part of buffer to be evaluated."
                 (rdd@ repl cmd))
        (interactive)
        (mark-whole-buffer)
-       (call-interactively (rdd@ repl fun-name)))
+       (call-interactively (rdd@ ,repl fun-name)))
 
      (defun ,(intern (format "%s-defun" (rdd@ repl fun-name))) ()
        ,(format "Evaluate innermost defun at point.
@@ -530,7 +530,7 @@ For example, in front of a {braced code fragment}, press \\[mark-sexp] to highli
 that entire fragment. In front of a word, \\[mark-sexp] highlights just that word."
                 (rdd@ repl cmd))
        (interactive)
-        (mark-defun) (call-interactively (rdd@ repl fun-name)))
+        (mark-defun) (call-interactively (rdd@ ,repl fun-name)))
 
      (defun ,(intern (format "%s-read" (rdd@ repl fun-name))) (str)
        "Read STR into code executable by the REPL.
@@ -730,9 +730,6 @@ docs."
     (insert string-with-codes)
     (ansi-color-apply-on-region (point-min) (point-max))
     (buffer-string)))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(provide 'repl-driven-development)
 
 ;;; pre-configured repls
 (defun repl-driven-development--preconfigured-terminal-REPL (keys)
@@ -919,7 +916,7 @@ java.util.List and java.awt.List match."
 import javax.swing.*;
 System.out.println(\"Enjoy Java with Emacs (｡◕‿◕｡))\")")
 
-  (defalias 'java-read #'repl-driven-development--java-read))
+  (defalias 'java-eval-read #'repl-driven-development--java-read))
 
 ;; TODO Consider using my own overlays, like I do for tooltips, instead of using
 ;;      eros. Then, for example, I don't need to worry about this truncation
@@ -1032,7 +1029,6 @@ let me see “how far” the parsing got and where it got stuck."
              (format "Map.of(%s)")))
      (else (error "lisp-to-java: Unknown data type “%s”" else)))))
 
-
 (cl-flet ((java-read (str)
             (thread-last
               str
@@ -1125,5 +1121,9 @@ suitable major mode; or even opening an external program."
                (apply #'-concat)
                (-cons* :type (plist-get data :name))))
     (else (error "java-lisp-to-json-lisp: Unknown data type “%s”" else))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide 'repl-driven-development)
 
 ;;; repl-driven-development.el ends here
