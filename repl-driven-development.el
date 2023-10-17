@@ -3,8 +3,8 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.9
-;; Package-Requires: ((s "1.12.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1") (hierarchy "0.6.0") (json-navigator "0.1.1"))
+;; Version: 1.0.10
+;; Package-Requires: ((s "1.12.0") (f "0.20.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1") (hierarchy "0.6.0") (json-navigator "0.1.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, eval, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
 ;; Homepage: http://alhassy.com/repl-driven-development
@@ -156,6 +156,7 @@
 ;;; requires and package preamble
 
 (require 's)               ;; “The long lost Emacs string manipulation library”
+(require 'f)
 (require 'dash)            ;; “A modern list library for Emacs”
 (require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
 (require 'eros)            ;; Simple Emacs Overlays
@@ -165,6 +166,7 @@
 (require 'peg)              ;; Parsing expression grammars
 (require 'json)
 (require 'seq)
+(require 'devdocs)
 
 (defconst repl-driven-development-version (package-get-version))
 (defun repl-driven-development-version ()
@@ -1028,49 +1030,6 @@ let me see “how far” the parsing got and where it got stuck."
              (s-join ", ")
              (format "Map.of(%s)")))
      (else (error "lisp-to-java: Unknown data type “%s”" else)))))
-
-(cl-flet ((java-read (str)
-            (thread-last
-              str
-              repl-driven-development--parse-pretty-printed-java
-              repl-driven-development--lisp-to-java)))
-  (require 'ert)
-  ;; Non-record *values* are read literally
-  (should (equal (java-read "123") "123"))
-  ;; Records with a single field become constructor calls on that field: As a number (if possible), otherwise as a string.
-  (should (equal (java-read  "Person[name=Jaafar]") "new Person(\"Jaafar\")"))
-  (should (equal (java-read  "Person[age=31.2]") "new Person(31.2)"))
-  ;; Record payloads can include spaces and commas
-  (should (equal (java-read "Person[name=AsSaddiq, Jaafar, the first, age=thirty and one, years=31]")
-                 "new Person(\"AsSaddiq, Jaafar, the first\", \"thirty and one\", 31)"))
-  ;; We can read nested records.
-  ;; For arbitrarly deep nesting, we cannot use regular expressions, and so we need to move to using PEGs.
-  (should (equal (java-read  "Person[name=Jaafar, child=Person[name=Yacoub]]") "new Person(\"Jaafar\", new Person(\"Yacoub\"))"))
-  (should (equal (java-read  "Person[name=Jaafar, child=Person[name=Yacoub], child=Person[name=Jasim]]")
-                 "new Person(\"Jaafar\", new Person(\"Yacoub\"), new Person(\"Jasim\"))"))
-  (should (equal (java-read  "Person[name=Hamid, child=Person[name=Jaafar, child=Person[name=Yacoub]]]")
-                 "new Person(\"Hamid\", new Person(\"Jaafar\", new Person(\"Yacoub\")))"))
-  (should (equal (java-read "Person[name=hamid, child=Person[name=Jaafar, age=12]]") "new Person(\"hamid\", new Person(\"Jaafar\", 12))"))
-  ;; We can read lists.
-  (should (equal (java-read "[1, 2, 3]") "List.of(1, 2, 3)"))
-  (should (equal (java-read "[]") "List.of()"))
-  (should (equal (java-read "[Person[name=Jasim, age=72, zindex=0.5], Person[name=Kathy, age=82, zindex=2.78], Person[name=Jaafar, age=31, zindex=3]]")
-                 "List.of(new Person(\"Jasim\", 72, 0.5), new Person(\"Kathy\", 82, 2.78), new Person(\"Jaafar\", 31, 3))"))
-  (should (equal (java-read "[[1], [2, 3], [4, 5, 6]]") "List.of(List.of(1), List.of(2, 3), List.of(4, 5, 6))"))
-  ;; We can mix the various structures (records & lists)
-  ;; TODO: (java-read "Person[children=[]]")
-  (should (equal (java-read "A[a=[B[b=[C[c=D[d=[E[e=hello]]]]]]]]")
-                 "new A(List.of(new B(List.of(new C(new D(List.of(new E(\"hello\"))))))))"))
-  ;; Null is known
-  (should (equal (java-read "Person[name=null]") "new Person(null)"))
-  ;; Maps are known
-  (should (equal (java-read "{}") "Map.of()"))
-  (should (equal (java-read "{a=1, b=2, c=3}") "Map.of(a, 1, b, 2, c, 3)"))
-  (should (equal (java-read "{a=Alice, b=Bob, c=Kathy}") "Map.of(a, \"Alice\", b, \"Bob\", c, \"Kathy\")"))
-  ;; TODO: Allow numbers as keys.
-  ;; {1=hello, 2=world}
-  ;; TODO: (java-read "Person[]")
-  )
 
 ;;; navigate-most-recent-result
 

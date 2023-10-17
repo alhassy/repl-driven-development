@@ -6,8 +6,9 @@
 #+property: header-args :results none :eval never-export :exports code
 
 # M-x package-install ox-gfm
-# (let ((org-export-use-babel nil) (org-export-with-broken-links t)) (org-mode) (org-gfm-export-to-markdown))
-# C-c C-e h o, *Then* use =grip= to see that this looks reasonable.
+# (let ((org-export-use-babel nil) (org-export-with-broken-links t)) (load-file "~/blog/AlBasmala.el")  (org-mode) (org-gfm-export-to-markdown))
+# *Then* use =grip= to see that this looks reasonable.
+
 
 * Top Matter :ignore:
 :PROPERTIES:
@@ -66,7 +67,7 @@ where you can see the evaluations of your Emacs Lisp via
 kbd:C─x_C─e; likewise, kbd:C─h_e shows you the output results
 of any REPL command created by  =repl-driven-development=.
 
-* Official Manual
+* COMMENT Official Manual
 :PROPERTIES:
 :CUSTOM_ID: official-manual
 :END:
@@ -187,6 +188,547 @@ from overlay echos, handle multi-line input, and more.
 For more documentation, and examples,
 see http://alhassy.com/repl-driven-development
 
+* Installation & Usage Instructions
+
+This package is on Melpa, melpa:repl-driven-development, so you can install it
+with [[https://github.com/alhassy/emacs.d#use-package-the-start-of-initel][use-package]]:
+
+ #+BEGIN_SRC emacs-lisp :tangle no
+(use-package repl-driven-development
+  :ensure t
+  :config
+  (repl-driven-development [C-x C-j] java)       ;; e“X”ecute “j”ava
+  (repl-driven-development [C-x C-n] javascript) ;; e“X”ecute “n”odejs
+  (repl-driven-development [C-x C-p] python)     ;; e“X”ecute “p”ython
+  (repl-driven-development [C-x C-t] terminal))  ;; e“X”ecute “t”erminal
+#+END_SRC
+
+The above mentions the four pre-configured REPLs that the package comes with:
+These are like their CLI equivalents, but offer more bells and whistles.
+- For example, the pre-configured =java= REPL is like
+  =(repl-driven-development [C-x C-j] "jshell")= but it supports multi-line input:
+  JShell eagerly inserts semicolons onto expressions, so, say, a multi-line Stream
+  pipeline would be interpreted as multiple distinct statements by JShell,
+  whereas our =java= configuration handles this by stripping the newlines (and any
+  intermediary comments).
+
+You can use any process, for example let's use the =tclsh= command line process:
+#+begin_src emacs-lisp
+(repl-driven-development [s-t] "tclsh"        ;; Make “⌘-t” e“X”ecute “T”cl code,
+                         :blink 'pulsar-blue  ;; and highlight submitted lines blue
+                         :prompt "%")         ;; and don't show me the tclsh prompt, which is “%”.
+#+end_src
+
+The =repl-driven-development= macro has been tried at least with the following
+processes.
+| /Please make a Pull Request, or Issue, to increase the following list!/ |
+
+** TODO COMMENT bash
+| /🤔 We suggest using the preconfigured =javascript= configuration that ships with this package./  |
+
+** JavaScript ---and a minimal server             :details_javascript:
+:PROPERTIES:
+:CUSTOM_ID: JavaScript-and-a-minimal-server
+:END:
+
+| /🤔 We suggest using the preconfigured =javascript= configuration that ships with this package./  |
+
+#+begin_center
+badge:JavaScript|Colourful PDF CheatSheet|success|https://alhassy.github.io/JavaScriptCheatSheet/CheatSheet.pdf|javascript
+#+end_center
+
+We can set up a JavaScript REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; C-x C-j now evaluates arbitrary JavaScript code
+   (repl-driven-development [C-x C-j] "node -i")
+#+end_src
+
+That's it! Press kbd:C-x_C-e on the above line so that kbd:C-x C-j will now
+evaluate a selection, or the entire line, as if it were JavaScript code.
+- Why kbd:C-x C-j  ?  Well, kbd:C-x_C-“e” for Emacs Lisp code, and kbd:C-x_C-“j”
+  for JavaScript code!
+- For instance, copy-paste the following examples into a JavaScript file ---or just
+  press kbd:C-x C-j /in any buffer/ to evaluate them!
+
+#+begin_src javascript
+1 + 2                                     // ⮕ 3
+
+1 + '2'                                   // ⮕ '12'
+
+let me = {name: 'Jasim'}; Object.keys(me) // ⮕ ['name']
+
+me.doesNotExist('whoops')                 // ⮕ Uncaught TypeError
+#+end_src
+
+All of these results are echoed inline in an overlay, by default.
+Moreover, there is a *REPL* buffer created for your REPL so you
+can see everything you've sent to it, and the output it sent
+back.  This is particularly useful for lengthy error messages,
+such as those of Java, which cannot be rendered nicely within an
+overlay.
+
+How this works is that Emacs spawns a new “node -i” process, then
+kbd:C-x_C-j sends text to that process. Whenever the process emits
+any output ---on stdout or stderr--- then we emit that to the
+user via an overlay starting with “⮕”.
+
+Finally, “C-h k  C-x C-j” will show you the name of the function
+that is invoked when you press C-x C-j, along with minimal docs.
+
+A useful example would be a minimal server, and requests for it.
+
+#+begin_src javascript
+// First get stuff with C-x C-e:
+// (async-shell-command "npm install -g express axios")
+
+let app = require('express')()
+let clicked = 1
+app.get('/hi', (req, res) => res.send(`Hello World × ${clicked++}`))
+
+let server = app.listen(3000)
+// Now visit   http://localhost:3000/hi   a bunch of times!
+
+// Better yet, see the output programmatically...
+let axios = require('axios')
+// Press C-x C-j a bunch of times on the following expression ♥‿♥
+console.log((await axios.get('http://localhost:3000/hi')).data)
+
+// Consider closing the server when you're done with it.
+server.close()
+#+end_src
+
+# (use-package plz) ;; An HTTP library for Emacs
+# (plz 'get \"http://localhost:3000/hi\")
+
+Just as “Emacs is a Lisp Machine”, one can use “VSCodeJS” to use
+“VSCode as a JS Machine”.
+See http://alhassy.com/vscode-is-itself-a-javascript-repl.
+
+** Python :details_python_#add8e6:
+:PROPERTIES:
+:CUSTOM_ID: Python
+:END:
+
+| /🤔 We suggest using the preconfigured =python= configuration that ships with this package./ |
+
+#+begin_center
+badge:Python|Colourful PDF CheatSheet|success|https://alhassy.github.io/PythonCheatSheet/CheatSheet.pdf|python
+#+end_center
+
+We can set up a Python REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+    ;; C-x C-p now evaluates arbitrary Python code
+    (repl-driven-development [C-x C-p] "python3 -i")
+#+end_src
+
+Example use...
+#+begin_src python
+1 + 2             # ⮕ 3
+
+hello = 'world!'  # (No output; this is an effectful operation)
+
+print(hello)      # ⮕ world!
+
+2 + 'hi'          # 🚫 TypeError: unsupported operand type(s) for +
+#+end_src
+
+Learn more by reading...  [[https://cs.lmu.edu/~ray/notes/pythonnetexamples/][Python: A Gentle Introduction to Socket Programming]]
+
+** Java                                                        :details_java:
+:PROPERTIES:
+:CUSTOM_ID: Java
+:END:
+
+| /🤔 We suggest using the preconfigured =java= configuration that ships with this package./ |
+
+#+begin_center
+badge:Java|Colourful PDF CheatSheet|success|https://alhassy.com/java-cheat-sheet.pdf|coffeescript
+#+end_center
+
+We can set up a Java REPL in the background as follows...
+#+begin_src emacs-lisp
+(repl-driven-development [C-x C-j] "jshell --enable-preview" :prompt "jshell>")
+#+end_src
+
+Now, we can select the following and press =C-x C-j= to evaluate the Java code:
+#+begin_src java :tangle no
+// Ensure you're not fullscreen, and you'll see a dialog window appear.
+import javax.swing.*;
+JOptionPane.showMessageDialog(new JFrame(), "Super nice!");
+#+end_src
+
+Or doing algebraic datatypes in Java:
+#+begin_src java :tangle no
+sealed interface Maybe {
+    record None() implements Maybe {}
+    record Just(int x) implements Maybe {}
+}
+
+var thisPrettyPrintsNicelyInTheREPL = new Maybe.Just(3);
+
+new Maybe.Just(3).equals(new Maybe.Just(3)) // yay
+#+end_src
+
+** TODO COMMENT Java MWE
+:PROPERTIES:
+:CUSTOM_ID: COMMENT-Java-MWE
+:END:
+
+#+begin_center
+badge:Java|Colourful PDF CheatSheet|success|https://alhassy.com/java-cheat-sheet.pdf|coffeescript
+#+end_center
+
+We can set up a Java REPL in the background as follows...
+#+begin_src emacs-lisp
+(repl-driven-development [C-x C-j] "jshell --enable-preview" :prompt "jshell>")
+#+end_src
+
+Now, we can select the following and press =C-x C-j= to evaluate the Java code:
+#+begin_src java :tangle no
+// Ensure you're not fullscreen, and you'll see a dialog window appear.
+import javax.swing.*;
+JOptionPane.showMessageDialog(new JFrame(), "Super nice!");
+#+end_src
+
+Or doing algebraic datatypes in Java:
+#+begin_src java :tangle no
+sealed interface Maybe {
+    record None() implements Maybe {}
+    record Just(int x) implements Maybe {}
+}
+
+var thisPrettyPrintsNicelyInTheREPL = new Maybe.Just(3);
+
+new Maybe.Just(3).equals(new Maybe.Just(3)) // yay
+#+end_src
+
+** TODO COMMENT Kotlin with ki
+** TODO COMMENT Scala with scala
+** COMMENT PHP
+** Ruby                                                             :details_ruby:
+
+#+begin_center
+badge:Ruby|Colourful PDF CheatSheet|success|https://alhassy.github.io/RubyCheatSheet/CheatSheet.pdf|ruby
+#+end_center
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; “C-x e r” now “e”valuates arbitrary “r”uby code
+   (repl-driven-development [C-x e r] "irb --inf-ruby-mode" :prompt "irb(main):.*>")
+#+end_src
+
+For example...
+#+begin_src ruby
+2 + 2
+
+33 + 4
+
+5.times { print "Odelay!" } # ⮕ Odelay! Odelay! Odelay! Odelay! Odelay! 5
+
+['ruby', 'is', 'readable'].map { | food | food.capitalize } # ⮕ ["Ruby", "Is", "Readable"]
+#+end_src
+
+** Clojure                                                  :details_clojure:
+:PROPERTIES:
+:CUSTOM_ID: Clojure
+:END:
+
+#+begin_center
+badge:Clojure|Colourful PDF CheatSheet|success|https://alhassy.github.io/ClojureCheatSheet/CheatSheet.pdf|awslambda
+#+end_center
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp
+   ;; “C-x C-k” now evaluates arbitrary Clojure code
+   (repl-driven-development [C-x C-k] "clojure" :prompt "user=>")
+#+end_src
+
+For example...
+#+begin_src clojure
+(+ 1 2) ;; ⮕ 3
+
+(defn square [x] (* x x)) ;; ⮕ #'user/square
+(square 3) ;; ⮕ 9
+#+end_src
+
+** TypeScript                                            :details_typescript:
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; C-x C-j now evaluates arbitrary JavaScript code
+   (repl-driven-development [C-x C-t] "npx ts-node")
+#+end_src
+
+Then we can use it as follows:
+#+begin_src typescript
+22 + 2
+
+"hello"
+#+end_src
+
+However, the output is ugly since it mentions the =^M= character.
+- Look at the =python= configuration that ships with this package for a starting
+  point on how to address this issue.
+
+** Haskell                                          :details_haskell_#add8e6:
+:PROPERTIES:
+:CUSTOM_ID: Haskell
+:END:
+
+#+begin_center
+badge:Haskell|Colourful PDF CheatSheet|success|https://alhassy.github.io/HaskellCheatSheet/CheatSheet.pdf|awslambda
+#+end_center
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; C-x C-h now evaluates arbitrary Haskell code
+   (repl-driven-development [C-x C-h] "ghci" :prompt "ghci>")
+#+end_src
+
+For example...
+#+begin_src haskell
+-- Sum of the first 100 squares
+sum [ x ** 2 | x <- [1..100]] -- ⇒ 338350.0
+
+-- The positive evens at-most 12
+[x | x <- [1..12], x `mod` 2 == 0] -- [2,4,6,8,10,12]
+
+-- Define a function...
+myLast = head . reverse
+
+-- Then use it...
+myLast [1, 2, 3] -- ⇒ 3
+#+end_src
+
+Note that Haskell has “typed holes” with the syntax =_A=:
+#+begin_src haskell :tangle nil
+1 + _A  -- ⇒ Found hole: _A::a; it :: forall {a}. Num a = a
+#+end_src
+
+Another language with typed holes is Arend...
+
+** Arend: Quickly making a terse Emacs interface for a language without one :details_arend:
+
+The [[https://arend-lang.github.io/download#console-application][Arend Theorem Prover]] has an IntelliJ interface (since it's a JetBrains proof
+assistant), but no Emacs counterpart ---which may be annoying for Agda/Coq
+programmers accustomed to Emacs but want to experiment with Arend.
+
+We can set up an Arend REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+    ;; C-x C-a now evaluates arbitrary Arend code
+    (repl-driven-development [C-x C-a]
+                             (format "java -jar %s -i"
+                                     (f-expand "~/Downloads/Arend.jar")))
+#+end_src
+
+Then,
+#+begin_src arend :tangle nil
+1 Nat.+ 1 -- ⇒ 2
+:type 4  -- ⇒ Fin 5
+
+-- Declare a constant
+\\func f => 1
+:type f -- ⇒ Nat
+f -- ⇒ 1
+
+-- Declare a polymorphic identity function, then use it
+\\func id {A : \\Type} (a : A) => a
+id 12  -- ⇒ 12
+
+-- Arend has “typed holes”
+1 Nat.+ {?}  -- ⇒ Nat.+{?}: Goal: Expectedtype: Nat
+#+end_src
+
+** PureScript                                    :details_purescript_#add8e6:
+:PROPERTIES:
+:CUSTOM_ID: PureScript
+:END:
+
+First =brew install spago=, then we can set up a PureScript REPL in the background
+as follows...
+#+begin_src emacs-lisp :tangle nil
+    ;; C-x C-p now evaluates arbitrary PureScript code
+    (repl-driven-development [C-x C-p] "spago repl")
+#+end_src
+
+For example....
+#+begin_src purescript :tangle nil
+import Prelude
+
+-- Define a function
+add1 = (\x -> x + 1)
+
+-- Use the function
+add1 2    -- ⇒ 3
+
+-- Experiment with a typed hole
+1 + ?A  -- ⇒ Hole ?A has the inferred type Int
+#+end_src
+
+** Idris                                                      :details_idris:
+:PROPERTIES:
+:CUSTOM_ID: Idris
+:END:
+
+First =brew install idris2=, then we can set up an Idris REPL in the background as
+follows...
+#+begin_src emacs-lisp :tangle nil
+    ;; C-x C-i now evaluates arbitrary Idris code
+    (repl-driven-development [C-x C-i] "idris2")
+#+end_src
+
+Here's some random code...
+#+begin_src purescript :tangle nil
+-- Like Lisp, Idris uses “the” for type annotations
+the Nat 4  -- ⇒ 4 : Nat
+
+with List sum [1,2,3] -- ⇒ 6
+
+-- defining a new type (REPL specific notation)
+:let data Foo : Type where Bar : Foo
+
+:t Bar -- ⇒ Foo
+
+-- Experiment with a typed hole [Same notation as Haskell]
+1 + ?A -- prim__add_Integer 1 ?A
+#+end_src
+
+** Racket                                            :details_racket_#add8e6:
+:PROPERTIES:
+:CUSTOM_ID: Racket
+:END:
+
+| Racket is a modern programming language in the Lisp/Scheme family. |
+
+First =brew install --cask racket=, then we can set up an Racket REPL in the
+background as follows...
+#+begin_src emacs-lisp :tangle nil
+    ;; C-x C-i now evaluates arbitrary Racket code
+    (repl-driven-development [C-x C-r] "racket -I slideshow")
+#+end_src
+
+Here's some random code...
+#+begin_src racket :tangle nil
+(define (series mk) (hc-append 4 (mk 5) (mk 10) (mk 20)))
+
+;; Shows 3 circles of increasing radius, in an external window
+(show-pict (series circle))
+#+end_src
+
+Meeting Racket for the first time is probably best done with /DrRacket/.
+# - Learning it can be done with a nice Emacs-integrated REPL ---see [[https://beautifulracket.com/][Beautiful Racket by Matthew Butterick]].
+
+** Common Lisp                                          :details_common_lisp:
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; “C-x e p” now “e”valuates arbitrary “c”ommon-lisp code
+   (repl-driven-development [C-x e c] "sbcl" :prompt "\\*")
+#+end_src
+
+For example...
+#+begin_src common-lisp
+(print "hello world")
+#+end_src
+** Perl                                                        :details_perl:
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; “C-x e p” now “e”valuates arbitrary “p”erl code
+   (repl-driven-development [C-x e p] "perl -de0")
+#+end_src
+
+For example...
+#+begin_src perl
+print(1..5)
+#+end_src
+** Julia                                                      :details_julia:
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; “C-x e j” now “e”valuates arbitrary “j”uila code
+   (repl-driven-development [C-x e j] "julia" :prompt "julia>")
+#+end_src
+
+For example... Let's get a random 2×2 matrix...
+#+begin_src julia
+rand(2, 2)
+#+end_src
+** GNU Smalltalk                                          :details_smalltalk:
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; “C-x e j” now “e”valuates arbitrary “s”malltalk code
+   (repl-driven-development [C-x e s] "gst" :prompt "st")
+#+end_src
+
+For example...
+#+begin_src smalltalk
+'Hello World!' printNl !
+#+end_src
+** Tcl                                                          :details_tcl:
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; “C-x e t” now “e”valuates arbitrary “t”cl code
+   (repl-driven-development [C-x e t] "tclsh" :prompt "%")
+#+end_src
+
+For example...
+#+begin_src tcl
+set a 1
+set b 2
+puts $a$b[expr 2 + 3]{bye}
+#+end_src
+** Lua                                                          :details_lua:
+
+We can set up a REPL in the background as follows...
+#+begin_src emacs-lisp :tangle nil
+   ;; “C-x e l” now “e”valuates arbitrary “l”ua code
+   (repl-driven-development [C-x e l] "lua")
+#+end_src
+
+For example...
+#+begin_src lua
+print("Hello, world")
+#+end_src
+** TODO COMMENT tcl with tclsh
+** COMMENT C
+# TODO: https://github.com/asvitkine/ccons
+# [Featurful!] Interactive Console for the C Programming Language
+
+** COMMENT F#          :Does_not_work:fsharpi_requires_ansi_term__not_eshell:
+:PROPERTIES:
+:CUSTOM_ID: COMMENT-F
+:END:
+
+badge:F#|Colourful PDF CheatSheet|success|https://alhassy.github.io/FSharpCheatSheet/CheatSheet.pdf|f-sharp
+
+#+begin_center
+badge:OCaml|Colourful PDF CheatSheet|success|https://alhassy.github.io/OCamlCheatSheet/CheatSheet.pdf|OCaml
+#+end_center
+
+First =brew install mono=, then we can set up an F# REPL in the background as
+follows...
+#+begin_src emacs-lisp :tangle nil
+    ;; C-x C-j now evaluates arbitrary F#Script code
+    (repl-driven-development [C-x C-j] "fsharpi")
+#+end_src
+
+#+begin_src fsharp :tangle nil
+-- F# has “ranges with a step”
+[0..3..14];;     -- ⇒ [0; 3; 6; 9]
+
+-- Which are a shorthand for guarded comprehensions
+[for i in 0..14 do if i % 3 = 0 then yield i];;
+
+-- Experiment with a typed hole
+1 + __;;   -- ⇒ The type 'obj' does not match the type 'int'
+#+end_src
+
+If you like F#, take a look at [[https://fstar-lang.org/][F*: A Proof-Oriented Programming Language]].
+
+** COMMENT Ocaml
 * Videos
 :PROPERTIES:
 :CUSTOM_ID: videos
@@ -201,3 +743,13 @@ see http://alhassy.com/repl-driven-development
 #+html: <img src="http://alhassy.com/images/rdd-teaching-a-js-runtime-to-be-a-webserver.png" width=400 height=300 />
 #+html: <a href="https://www.youtube.com/watch?v=b6Z3NQVn4lY"><img src="https://img.youtube.com/vi/b6Z3NQVn4lY/0.jpg" /></a>
 #+html: </div>
+* Bye!
+   :PROPERTIES:
+   :CUSTOM_ID: Bye
+   :END:
+
+badge:thanks|for_reading
+
+tweet:https://github.com/alhassy/repl-driven-development
+
+badge:|buy_me_a coffee|gray|https://www.buymeacoffee.com/alhassy|buy-me-a-coffee
