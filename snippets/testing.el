@@ -39,8 +39,9 @@
       (repl-driven-development [C-x C-t] "bash" :init "echo $(fortune)")
 
       ;; We can get rid of the prompt at the end with :prompt
-      (repl-driven-development [C-x C-t] "bash" :prompt "^[^ ]*\\$")
+      (repl-driven-development [C-x C-t] "bash" :prompt "^bash.*?\\$")
       pwd
+      echo "bye$"
 
       (repl-driven-development [C-x C-t] terminal)
 
@@ -67,6 +68,10 @@
       .range(0, 23)
       // Now print it out
       .forEach(x -> System.out.println(x))
+
+      ;; There is no repetation of input via output
+      ;; https://github.com/alhassy/repl-driven-development/issues/5
+      System.out.println("Hi")
 
       IntStream.range(0, 40) .mapToObj(i -> i % 15 == 0 ? "FizzBuzz" : i % 3 == 0 ? "Fizz" : i % 5 == 0 ? "Buzz" : String.valueOf(i)).toList()
 
@@ -111,7 +116,7 @@
       # otherwise my aggressive-formatter strips the whitespace away.
 
       def square(x):
-      return x * x
+         return x * x
 
       square(5)
 

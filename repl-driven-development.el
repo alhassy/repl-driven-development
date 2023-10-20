@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.11
+;; Version: 1.0.12
 ;; Package-Requires: ((s "1.12.0") (f "0.20.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1") (hierarchy "0.6.0") (json-navigator "0.1.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, eval, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -428,6 +428,14 @@ The echo only happens when OUTPUT differs from REPL's input."
     ;; All other prefixes are handled by repl-fun-name, above.
     (_
      ;; Show output as an overlay at the current cursor position
+
+     ;; For some reason, sometimes Emacs emit the input as part of the
+     ;; output, so let's chop it off. For example, I've noticed this
+     ;; with Python on *my* machine, but others have noticed it with Java[0],
+     ;; but I couldn't reproduce this with Java.
+     ;; [0] https://github.com/alhassy/repl-driven-development/issues/5
+     (setq output (s-chop-prefix (rdd@ repl input) output))
+
      ;; ﴾ Since eros is intended to be used with ELisp, not arbitrary langs,
      ;; it does some sexp look-about, which may not mix well with, say, JS
      ;; arrow functions, so we freeze such movements, locally. ﴿
@@ -741,7 +749,7 @@ docs."
    keys
    "bash"
    :name 'terminal-eval
-   :prompt "^[^ ]*\\$"))
+   :prompt "^bash.*?\\$"))
 
 (defun repl-driven-development--preconfigured-javascript-REPL (keys)
   "A NodeJS REPL configuration, bound to keybinding KEYS."
