@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.10
+;; Version: 1.0.11
 ;; Package-Requires: ((s "1.12.0") (f "0.20.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1") (hierarchy "0.6.0") (json-navigator "0.1.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, eval, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -532,7 +532,7 @@ For example, in front of a {braced code fragment}, press \\[mark-sexp] to highli
 that entire fragment. In front of a word, \\[mark-sexp] highlights just that word."
                 (rdd@ repl cmd))
        (interactive)
-        (mark-defun) (call-interactively (rdd@ ,repl fun-name)))
+       (mark-defun) (call-interactively (rdd@ ,repl fun-name)))
 
      (defun ,(intern (format "%s-read" (rdd@ repl fun-name))) (str)
        "Read STR into code executable by the REPL.
@@ -601,12 +601,13 @@ reading the docs of your REPL. For an example, see
           ('(16) ;; C-u C-u ⇒ documentation lookup
            (,(intern (format "%s-docs-at-point" (rdd@ repl fun-name)))))
           (_
-           (if (use-region-p)
-               (deactivate-mark)
-             (beginning-of-line)
-             (setq region-beg (point))
-             (end-of-line)
-             (setq region-end (point)))
+           (when (called-interactively-p 'interactive)
+             (if (use-region-p)
+                 (deactivate-mark)
+               (beginning-of-line)
+               (setq region-beg (point))
+               (end-of-line)
+               (setq region-end (point))))
            (setf (rdd@ ,repl input/start) region-beg)
            (setf (rdd@ ,repl input/end) region-end)
            (,(intern (format "%s-string" (rdd@ repl fun-name)))
