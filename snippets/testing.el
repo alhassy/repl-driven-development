@@ -180,6 +180,23 @@
   ;; TODO: (java-read "Person[]")
   )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TODO: Document the `emacs' function in the javascript repl.
+;;
+;; emacs.eval(`user-full-name`)
+;; emacs.eval(`(load-theme 'spacemacs-dark)`)
+;; emacs.eval(`(load-theme 'spacemacs-light)`)
+;; emacs.eval(`(message-box "hi")`)
+;; // Multi-line also works fine
+;; emacs.eval(`(progn
+;; (message-box "Hello")
+;; (message-box "World")
+;; )`)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; TODO: Add to main rdd.el macro: Mention connecting to JS Server via C-x C-t telnet.
+
 ;; Something to consider using
 ;;
 ;; Current bug: It makes C-x C-t insert unexpected text, the docstring of C-x C-t!

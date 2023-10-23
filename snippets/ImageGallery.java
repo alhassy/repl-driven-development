@@ -49,6 +49,8 @@
 ~/Downloads/random-images/; cd ~/Downloads/random-images; mogrify -resize
 300x300 ./*.jpg; cp pouring-coffee---photo-by-mhrezaa-on-unsplash.jpg
 love-0.jpg; cp pouring-water---photo-by-mhrezaa-on-unsplash.jpg love-1.jpg
+ *
+ * END SETUP
  */
 
 /*
@@ -65,75 +67,880 @@ import javax.swing.*;
 
 class ImageGallery {
   public static void main(String[] args) {
+         /*         𝓖𝓸𝓪𝓵: 𝑺𝒆𝒆 𝒕𝒉𝒊𝒏𝒈𝒔 𝑨𝑺𝑨𝑷, 𝒂𝒏𝒅 𝒄𝒓𝒆𝒂𝒕𝒆 𝒃𝒚 𝒓𝒆𝒂𝒄𝒕𝒊𝒏𝒈 (｡◕‿◕｡)         */
 
-    // Goal: “See things ASAP, and create by reacting!”
+        var frame = new JFrame(); // ⇒ Your cursor loses control: There's a JFrame created!
 
-    var frame = new JFrame(); // ⇒ Your cursor loses control: There's a JFrame created!
-    frame.setVisible(true); // It's invisible by default, lame! ﴾“x” button hides frame, not kills it﴿
-    frame.setAlwaysOnTop(true); // I wanna see it even when I'm in my editor.
 
-    // We see a super tiny new dialog; let's enlarge it
-    frame.setSize(450, 450);
 
-    // Whoops we forgot to set the title!
-    frame.setTitle("Hola¡");
 
-    // Nice; let's try another title
-    frame.setTitle("Photo Gallery ~ Designed via REPL driven development");
 
-    // Let's add some colour to our lives!
-    frame.getContentPane().setBackground(Color.CYAN);
 
-    // Let's “add” some content
-    File directory = new File("/Users/musa/Downloads/random-images/");
-    var allImages = Arrays.stream(directory.listFiles())
-                       .filter(it -> it.getName().endsWith(".jpg"))
-                       .map(it -> new ImageIcon(it.getAbsolutePath()))
-                       .toList();
-    var image = new JLabel(allImages.get(0));
-    frame.add(image);
 
-    // Wait... nothing changed?!
 
-    // We need to re-trigger the repainting of our GUI; e.g., by changing its
-    // size (either manually or via code, to a new size):
-    frame.revalidate();
 
-    // Can we change the image easily?
-    image.setIcon(allImages.get(1));
-    // Yay, it worked!
-    // Let's change get(𝒾) for 𝒾:0..8 to see this in-action a few times!
 
-    // Let's add a button for user interactivity!
-    var button = new JButton("Next Image");
-    frame.add(button);
-    // Now let's experiment to find the ideal position of the button ;-]
-    frame.setLayout(new FlowLayout());
-    // Let's hook a callback onto it
-    int clicks = 0;
-    ActionListener  watDo = e -> frame.setTitle("You did the thing! x " + clicks++);
-    button.addActionListener(watDo);
 
-    // We can also remove the listener:
-    button.removeActionListener(watDo);
 
-    // Let's add modify the listener: Change the existing image!
-    // (In the video, I would not copy-paste, but instead modify the above
-    // snippet!)
-    watDo = e -> image.setIcon(allImages.get(clicks++ % allImages.size()));
 
-    // I'd like to see the name of the image, whenever we click on a new image.
-    // Also fit the frame to the minimal amount of space required: Pack it.
-    watDo = e -> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        frame.setVisible(true); // It's invisible by default, lame! ﴾“x” button hides frame, not kills it﴿
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        frame.setAlwaysOnTop(true); // I wanna see it even when I'm in my editor.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // We see a super tiny new dialog; let's enlarge it
+        frame.setSize(450, 450);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Whoops we forgot to set the title!
+        frame.setTitle("Hola¡");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Nice; let's try another title
+        frame.setTitle("Photo Gallery ~ Designed via REPL driven development");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Let's add some colour to our lives!
+        frame.getContentPane().setBackground(Color.CYAN);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Let's “add” some content
+        File directory = new File("/Users/musa/Downloads/random-images/");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        var allImages = Arrays.stream(directory.listFiles())
+            .filter(it -> it.getName().endsWith(".jpg"))
+            .map(it -> new ImageIcon(it.getAbsolutePath()))
+            .toList();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        var image = new JLabel(allImages.get(0));
+        frame.add(image);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Wait... nothing changed?!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // We need to re-trigger the repainting of our GUI; e.g., by changing its
+        // size (either manually or via code, to a new size):
+        frame.revalidate();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Can we change the image easily?
+        image.setIcon(allImages.get(1));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Yay, it worked!
+        // Let's change get(𝒾) for 𝒾:0..8 to see this in-action a few times!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Let's add a button for user interactivity!
+        var button = new JButton("Next Image");
+        frame.add(button);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Now let's experiment to find the ideal position of the button ;-]
+        frame.setLayout(new FlowLayout());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Let's hook a callback onto it
+        int clicks = 0;
+        ActionListener  watDo = e -> frame.setTitle("You did the thing! x " + clicks++);
+        button.addActionListener(watDo);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // We can also remove the listener:
+        button.removeActionListener(watDo);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Let's add modify the listener: Change the existing image!
+        // (In the video, I would not copy-paste, but instead modify the above
+        // snippet!)
+        watDo = e -> image.setIcon(allImages.get(clicks++ % allImages.size()));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // I'd like to see the name of the image, whenever we click on a new image.
+        // Also fit the frame to the minimal amount of space required: Pack it.
+        watDo = e -> {
                 var icon = allImages.get(clicks++ % allImages.size());
                 image.setIcon(icon);
                 frame.setTitle(icon.toString());
                 frame.pack();
             };
 
-   // Neato! We have a photo gallery app xD
 
-   // This was fun! Bye 👋
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Neato! We have a photo gallery app xD
+
+        // This was fun! Bye 👋
   }
 }
 

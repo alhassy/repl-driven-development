@@ -1,0 +1,314 @@
+# -*- eval: (my/execute-startup-blocks)
+
+#+title: Editor Integrated REPL Driven Development for all Languages
+#+author: Musa Al-hassy
+# 🗣 “moo saw”; and “al-hassy” rhymes with “classy”
+
+* The Wonders of “C-x C-e” ---“A uniform REPL interface for all languages”
+
+** /Emacs can interpret Lisp anywhere it appears!/
+
+  ;; Press <kbd:C-x C-e> on the next line
+  (message-box "Hello, %s" user-full-name)
+
+** /Emacs can interpet Java/Bash/Python/⋯ anywhere it appears!/
+
+  // Press <kbd:C-x C-j> on the next two lines
+  String username = System.getProperty("user.name");
+  JOptionPane.showMessageDialog(null, "Hello, " + username);
+
+
+** /This means you can keep code in regular text files that does things 😲/
+
+*** We can embed “hyperlinks” anywhere...
+
+   ;; Learn more about the nifty “tldr” command with... <kbd:C-x C-e>
+   (man "tldr")
+
+   ;; Remember to edit this file, to keep things in-sync ... <kbd:C-x C-e>
+   (find-file-other-window "../repl-driven-development.el")
+
+*** Or sanity checks, without using external tools:
+
+   // Ensure this end-point works as intended by doing a request ... <kbd:C-x C-n>
+   (await axios.get("https://jsonplaceholder.typicode.com/posts/1")).data
+
+*** Or, say, modify our current workflow on-the-fly
+
+   -- Get your head in the game! ... with <kbd:C-x C-a>
+   -- (Hear a motivation message, use exciting desktop wallpaper!)
+   say "You can do it, buddy!"
+   tell application "System Events"
+       tell current desktop
+           set picture to (POSIX file "~/Downloads/random-images/love-1.jpg")
+       end tell
+   end tell
+
+Exercise: Get a random image via an API call, say via Lisp, then set that to the
+background with AppleScript (Hint: <doc:applescript-eval-string>).
+
+** /Your code immediately takes form!/
+- It's a fun, and useful, way to learn coding!
+- Write code that gets things done for you, /now/.
+
+  ;; Change the current Emacs theme, by pressing <kbd:C-x C-e>
+  (my/load-theme 'spacemacs-light)
+
+  // Change the current Emacs theme, by pressing <kbd:C-x C-n>
+  emacs.eval(`(load-theme 'spacemacs-dark)`)
+
+  -- Toggle the current operating system theme, with <kbd:C-x C-a>
+  tell application "System Events"
+     tell appearance preferences
+        set dark mode to not dark mode
+     end tell
+  end tell
+
+(NOTE: Have a terminal app present, and notice its colours change. Notice the
+Emacs title pane change colour. Etc.)
+
+** /Output is shown in an overlay at point/
+
+For Emacs Lisp,
+
+   ;; <kbd:M-x eros-mode>, then <kbd:C-x C-e>
+   (s-collapse-whitespace (shell-command-to-string "scutil --get ComputerName"))
+
+For Python,
+
+   ♯ Press <kbd:C-x C-p> on the next line
+   list(map(lambda i: 'Fizz'*(not i%3) + 'Buzz'*(not i%5) or i, range(1,101)))
+
+- *Use ~C-u 0~ prefix to avoid truncation.*
+- *See the output echoed in the ~*Messages*~ buffer with ~C-h e~.*
+
+** /Use the ~C-u~ prefix to insert results/
+
+  ;; Change all references to Jacob with Yacoub, via <kbd:C-x C-e>
+  (subst 'yacoub 'jacob '(Abraham :wives (hagar sarah) :sons (ishameal jacob)))
+
+/This is useful for regression testing ---or to get the value for future use./
+
+  // Get the keys of a person, via <kbd:C-x C-n>
+   Object.keys({ name: "Ibrahim", age: 175, city: "Ur" })
+
+  // Save a JSON payload, from an API request, for future use
+  (await axios.get('https://jsonplaceholder.typicode.com/posts/23')).data
+
++ *Wait, how does ~subst~ work?* Press ~C-h o~ on it!
++ *Wait, how does ~axios~ work?* Use a ~C-u C-u~ prefix on it!
+** Summary ---extending the familiar “C-x C-e” workflow to all languages
+
+| Familiar Lisp Workflow      |   | Mimicked workflow for your language 𝑳 |
+| Evaluate code selection     |   | ~𝑳-eval~                                |
+| See result echoed           |   | In an overlay, by your cursour        |
+| See result in ~*Messages*~    |   | ~C-h e~                                 |
+| Insert result               |   | Use ~C-u~ prefix                        |
+| Evaluate top-level “defun”  |   | ~𝑳-eval-defun~                          |
+| Evaluate all code in buffer |   | ~𝑳-eval-buffer~                         |
+| See docs at point           |   | ~C-u C-u~ prefix                        |
+| Restart evaluation process  |   | ~C-u -1~ prefix                       |
+
+* An overview of REPL Driven Development
+
+*Demo: Modifying A BallPit Runtime, at runtime*
+
+[[~/blog/images/rdd-benefits.png]]
+
+# Show how “balls[2]” can be modified ---the ball pit code does not matter, the
+# live change is what we want to discuss
+
+* Interactively Solving FizzBuzz with Python
+
+A game to teach children divsion...
+
+  /Write numbers 1..100 and replace multiples of 3 with “Fizz”, multiples of 5
+              with “Buzz”, and multiples of both with “FizzBuzz”./
+
+** Script
+1. ~range(1, 100)~
+2. Huh C-x C-p shows nothing!
+3. C-u C-u to see the docs, notice that range is a generator, so wrap it with
+   ~list~
+4. ~list(range(1, 100))~
+5. Huh, we're missing ‘100’!
+6. C-u C-u to see the docs of range again.
+7. ~list(range(1, 101))~
+8. ~list(map(lambda i: i, range(1,101)))~
+9. Multiples of 3 ...
+10. ~list(map(lambda i: 'Fizz'*(not i%3), range(1,101)))~
+11. Huh, we're seeing empty strings! Sine ~'Fizz' * 0~ is ~''~!
+12. ~list(map(lambda i: 'Fizz'*(not i%3) or i, range(1,101)))~
+13. Multiples of 5...
+14. ~list(map(lambda i: 'Fizz'*(not i%3) or 'Buzz'*(not i%5) or i, range(1,101)))~
+15. Huh, index 15 should be ~FizzBuzz~ not just ~Fizz~!
+16. 15 is a multiple of both 3 and 5, so ~or~ is not approriate, we should concat instead!
+17. ~list(map(lambda i: 'Fizz'*(not i%3) + 'Buzz'*(not i%5) or i, range(1,101)))~
+18. All done, yay!
+
+* Rapidly growing a Java runtime to be a photo gallery application, from scratch
+
+
+
+                                       [[elisp:(progn (execute-kbd-macro (kbd "M-j")) (when nil I include the call twice so I can see the command name appear in the keycast, that is all) (execute-kbd-macro (kbd "M-j")))][﴾𝒮𝓉𝒶𝓇𝓉﴿]]
+
+* Implementing read protocols to use RDD to insert results of evaluation, for growing a test suite
+** How to /show/ program output?
+
+#+begin_src latex-as-png :file rdd-print.pdf :resolution "520" :results raw value replace :exports none
+\begin{center}
+\smartdiagram[constellation diagram]{{\sc Print} \centerline{\footnotesize “Human friendly”},
+  \centerline{HTML} \centerline{in} \centerline{Browser},
+  \centerline{JSON} \centerline{in} \centerline{clickable tree},
+  \centerline{Table} \centerline{in} \centerline{Org-mode},
+  \centerline{OOP Objects} \centerline{as} \centerline{JSON},
+  \centerline{Hierarchical} \centerline{Text} \centerline{in} \centerline{PDF or Org}}
+{\newline \color{gray}\texttt{www.alhassy.com/repl-driven-development}}
+\end{center}
+#+end_src
+
+#+RESULTS:
+[[file:rdd-print.png]]
+
+NOTE: JSON    ⇒ doc:json-navigator-navigate-region
+      browser ⇒ doc:xwidget-webkit-browse-url
+
+** REPL: “R” and “P” are data interchange protocols
+** Languages without them invent data interchange formats (e.g., JSON, XML, Protobuf)
+** Specification: ~(𝓅𝓇𝒾𝓃𝓉 (𝓇ℯ𝒶𝒹 string)) ≈ string~  and  ~(𝓇ℯ𝒶𝒹 (𝓅𝓇𝒾𝓃𝓉 data)) ≈ data~
+
+# For example, in Emacs Lisp,
+#+name: startup-code
+#+begin_src emacs-lisp
+     (setq string  "(Abraham :wives (hagar sarah) :sons (ishameal yacoub))") ;; all green, one string
+     (setq data    '(Abraham :wives (hagar sarah) :sons (ishameal yacoub)))  ;; somethings are blue; data; code!
+
+     (defun 𝓅𝓇𝒾𝓃𝓉 (d) (s-trim (s-collapse-whitespace (pp-to-string d))))
+     (defun 𝓇ℯ𝒶𝒹 (s) (read s))
+#+end_src
+
+** /“BRORP”: Bring your own Read Protocol!/
+
+#+begin_src latex-as-png :file rdd-read.pdf :resolution "520" :results raw value replace :exports none
+\begin{center}
+\smartdiagram[sequence diagram]{
+  String (denoting OOP object),
+  % JSON,
+  Lisp \texttt{plist},
+  Constructor Methods}
+{\newline \color{gray}\texttt{www.alhassy.com/repl-driven-development} \newline}
+\smartdiagram[priority descriptive diagram]{
+  \texttt{Person@5e9f23b4},
+  % \mbox{\scriptsize \texttt{\hspace{-.5em}\{name: Jasim,}
+  %   \texttt{age: 78,}
+  %   \texttt{$\mathsf{\_{}\_{}type\_{}\_{}}$: "Person"\}}},
+  \texttt{'(:type Person :fields [ \mbox{{\scriptsize (:name "name" :value "Jasim" :type string) }}
+      \mbox{{\scriptsize (:name "age" :value 78 :type number) }}
+    ])},
+  \texttt{new Person("Jasim", 78)}
+}
+
+\end{center}
+#+end_src
+
+#+RESULTS:
+[[file:rdd-read.png]]
+
++ Red → Blue :: Pretty-printing and /Parsing Expression Grammars/ (e.g., ~peg.el~)
+  - Why Parsing and not regular expressions? /To handle arbitraryly nested data-strutures!/
+  - See doc:repl-driven-development--parse-pretty-printed-java
+  - Currently only supporting Java ~record~-s, for arbitrary classes we could
+    convert to JSON first (using a 3ʳᵈ-party library like ~GSON~).
+
++ Blue → Purple :: Custom Lisp algorithms ---e.g., to handle lists, ~null~, maps, etc.
+  - See doc:repl-driven-development--lisp-to-java
+
+* Use Case: RDD & Job Interviews
+
+*Last year,* when I was changing jobs, I would share screen and show the
+interviewer what I was doing:
+a. I spoke my thought process as I typed,
+b. and did test-driven-development with the example input-output provided to me
+   (if any),
+c. and ran my little algorithms as soon as I typed them ---or wrote my algorithms
+   with *concrete example arguments then abstracted them to functions later on*
+d. I also had a loop of input-to-expected-output pairs which I ran occasionally
+   to ensure my code would pass any tests I had created along the way.
+
+                          [[~/blog/images/rdd-workflow.png]]
+
+* Metadata
+
+#+SEQ_TODO: Metadata
+Presentation Setup Code
+
+#+name: startup-code
+#+begin_src emacs-lisp
+;; Remove icon in title bar ---may take effect for /new/ frames, not current frame.
+;; https://emacs.stackexchange.com/questions/33680/how-to-remove-the-icon-in-the-titlebar
+(shell-command "defaults write org.gnu.Emacs HideDocumentIcon YES")
+(set-frame-parameter (selected-frame) 'cursor-color "LightPink1")
+(setq frame-title-format "    𝓔𝓶𝓪𝓬𝓼 𝓒𝓸𝓷𝓯 𝟚𝟘𝟚𝟛   ~   Editor Integrated REPL Driven Development for all Languages   ~   ⟅10 minutes⟆")
+(keycast-header-line-mode)
+(org-toggle-inline-images)
+(repl-driven-development [C-x C-j] java)
+(repl-driven-development [C-x C-n] javascript)
+(repl-driven-development [C-x C-p] python)
+(repl-driven-development [C-x C-t] terminal)
+(repl-driven-development [C-x C-a] applescript)
+(eros-mode -1) ;; I don't want to see the ELisp outputs of executing the above commands.
+(writegood-mode -1) (flyspell-mode -1) ;; Don't highlight intentional spelling errors, like BRORP.
+
+;; To have keycast working with doom-modeline, I first need to turn off the latter then turn it on.
+(doom-modeline-mode -1)
+(keycast-mode +1)
+(doom-modeline-mode +1)
+
+;; M-x org-tree-slide
+;;
+;; https://github.com/takaxp/org-tree-slide#control-functions
+;; org-tree-slide-move-next-tree (C->)
+;; org-tree-slide-move-previous-tree (C-<)
+;; org-tree-slide-content (C-x s c)
+
+;; Ensure Emacs is not full screen, to see java/applescript animations
+(defun my/maximize-frame ()
+  "Maximize the Emacs frame to take up all available screen space.
+
+This is not the same as fullscreen mode."
+  (interactive)
+  (set-frame-parameter nil 'fullscreen 'maximized))
+;; Actually call it!
+(my/maximize-frame)
+
+;; Quickly jump to my Java code example
+;; Use an informative name, since it'll show-up via keycast when I press M-j.
+ (bind-key* "M-j"
+            (defun EmacsConf:\ Teaching\ a\ 𝒥𝒶𝓋𝒶\ runtime\ to\ be\ an\ image\ gallery\ application ()
+              (interactive)
+              (find-file "./ImageGallery.java")
+              (java-ts-mode)
+              (my/maximize-frame)
+              (eglot-java-mode +1) ;; Inline overlays of arg names, syntax/type checks
+              (company-mode +1) ;; Completions for methods
+              (flyspell-mode -1) ;; Don't check my spelling
+              (rainbow-delimiters-mode +1)  ;; Colourful rainbow parens
+              (rainbow-identifiers-mode +1) ;; Name-based/semantic highlighting
+              (keycast-header-line-mode +1) ;; Show my keybindings
+              (re-search-forward "END SETUP")
+              (re-search-forward "public static void main.String.. args.")
+              (mark-sexp) (narrow-to-region (region-beginning) (region-end))
+              (pop-mark)
+              (scroll-down -2)
+              ;; Ensure Emacs is not full screen, to see java/applescript animations
+              (set-frame-parameter nil 'fullscreen nil)
+              (my/load-theme 'spacemacs-light)))
+
+(bind-key "M-SPC"
+          (cl-defun EmacsConf:\ Let\'s\ see\ some\ more... ()
+            (interactive)
+            (delete-all-space)
+            (insert "\n\n")
+            (indent-for-tab-command))
+          java-ts-mode-map)
+#+end_src

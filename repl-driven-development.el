@@ -3,7 +3,7 @@
 ;; Copyright (c) 2023 Musa Al-hassy
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
-;; Version: 1.0.12
+;; Version: 1.0.13
 ;; Package-Requires: ((s "1.12.0") (f "0.20.0") (lf "1.0") (dash "2.16.0") (eros "0.1.0") (bind-key "2.4.1") (emacs "29") (f "0.20.0") (devdocs "0.5") (pulsar "1.0.1") (peg "1.0.1") (hierarchy "0.6.0") (json-navigator "0.1.1"))
 ;; Keywords: repl-driven-development, rdd, repl, lisp, eval, java, python, ruby, programming, convenience
 ;; Repo: https://github.com/alhassy/repl-driven-development
@@ -286,7 +286,7 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
         java, python, terminal, javascript
 
     These are preconfigured REPLs; e.g., see the docs of
-    function `repl-driven-development--preconfigured-python-REPL'.
+    function `repl-driven-development-preconfiguration:python'.
 
   - PROMPT [Regular Expression]:
     What is the prompt that your REPL shows, e.g., “>”.
@@ -317,11 +317,11 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
 
   - INPUT-REWRITE-FN [1-arg function]: A function called to rewrite text
     before submitting it to the repl. For example usage, see the docs of
-    function `repl-driven-development--preconfigured-python-REPL'.
+    function `repl-driven-development-preconfiguration:python'.
 
   - ECHO-REWRITE-FN [1-arg function]: A function called to rewrite repl
     output before echoing it to the user.  For example usage, see the docs
-    of function `repl-driven-development--preconfigured-python-REPL'.
+    of function `repl-driven-development-preconfiguration:python'.
 
     Intentionally meant for human friendly pretty-printing, not for
     a READ protocol. Those serve different goals.
@@ -339,25 +339,21 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
 
   VSCode has a similar utility for making in-editor REPLs, by the
   same author: See URL `http://alhassy.com/making-vscode-itself-a-java-repl'."
-  (pcase cli
-    ('java
-     ;; JShell does semicolon insertion eagerly, so it things the following
-     ;; are three separate expressions! We can fix this by removing new lines.
-     `(repl-driven-development--preconfigured-java-REPL ,keys))
-    ;; Likewise JS does eager semicolon insertion.
-    ('javascript
-     `(repl-driven-development--preconfigured-javascript-REPL ,keys))
-    ('terminal
-     `(repl-driven-development--preconfigured-terminal-REPL ,keys))
-    ('python `(repl-driven-development--preconfigured-python-REPL ,keys))
-    (_ `(-let* (((repl . args) (s-split " " ,cli)))
+  (if (symbolp cli)
+      `(or (ignore-errors (funcall (intern (format "repl-driven-development-preconfiguration:%s" (quote ,cli))) ,keys))
+           (message "It seems there is no preconfigured setup for “%s”; consider using a string with the name of a CLI process." (quote ,cli)))
+   `(-let* (((repl . args) (s-split " " ,cli)))
           ;; (repl-fun-name string)
           (setf (rdd@ repl cmd) repl) ;; String
           (setf (rdd@ repl prompt) ,prompt) ;; String (Regular Expression)
           (setf (rdd@ repl keybinding)
                 (s-join " " (mapcar #'pp-to-string ,keys))) ;; String
           ;; String: Space separated list
-          (setf (rdd@ repl docs) (s-join " " ,docs))
+          (setf (rdd@ repl docs) ,docs)
+          ;; The following is set to “nil” so that consecutive
+          ;; calls to this method, but possibly with differing docs,
+          ;; results in those docs being installed as needed.
+          (setf (rdd@ repl docs-installed?) nil)
           ;; Used to avoid scenarios where input is echoed thereby
           ;; accidentally treating it as a repl output
           (setf (rdd@ repl input) "") ;; String
@@ -380,9 +376,6 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
                 (apply #'start-process "repl-driven-development"
                        nil repl args))
 
-          (setq docs
-                (repl-driven-development--install-any-not-yet-installed-docs
-                 ,docs))
           (eval (repl-driven-development--make-eval-function repl))
 
           (process-send-string (rdd@ repl process) ,init)
@@ -396,7 +389,7 @@ You can always use `C-h e' to see output in the *Messages* buffer.")
 
           ;; Return the REPL symbol to the user (whose symbol-plist can be used
           ;; to get various information!)
-          repl))))
+          repl)))
 
 ;;; main-callback: insert or echo
 (defun repl-driven-development--main-callback (repl)
@@ -486,7 +479,11 @@ The echo only happens when OUTPUT differs from REPL's input."
      (defun ,(intern (format "%s-docs-at-point" (rdd@ repl fun-name))) ()
        "Documentation at point."
        (interactive)
-       (repl-driven-development--docs-at-point (quote ,(rdd@ repl docs))))
+       (unless (rdd@ ,repl docs-installed?)
+         (repl-driven-development--install-any-not-yet-installed-docs
+          (rdd@ ,repl docs))
+         (setf (rdd@ ,repl docs-installed?) t))
+       (repl-driven-development--docs-at-point (rdd@ ,repl docs)))
 
      (defun ,(intern (format "%s-buffer" (rdd@ repl fun-name))) ()
        ,(format "Execute the accessible portion of current buffer as %s code.
@@ -581,7 +578,7 @@ To submit a region, use `%s'."
 If you see “...” then chances are that you have exceeded the default truncation
 threshold for your REPL. Consider increasing the threshold, if possible, by
 reading the docs of your REPL. For an example, see
-`repl-driven-development--preconfigured-java-REPL'."
+`repl-driven-development-preconfiguration:java'."
        (interactive)
        (if (not current-prefix-arg)
            (display-message-or-buffer (rdd@ ,repl output))
@@ -627,13 +624,14 @@ reading the docs of your REPL. For an example, see
 
 (defun repl-driven-development--install-any-not-yet-installed-docs (docs)
   "Install any not-yet-installed DOCS; return a List<String> of the installed \
-docs."
+docs.
+
+DOCS is a space seperated sequence of identifiers for dev-docs."
   (when docs
-    (require 'devdocs)
     (cl-assert (stringp docs))
     (setq docs (--reject (s-blank? it) (s-split " " docs)))
     (cl-assert (listp docs))
-    (-let [installed (mapc #'f-base (f-entries devdocs-data-dir))]
+    (-let [installed (mapcar #'f-base (f-entries devdocs-data-dir))]
       (mapc (lambda (it) (unless (member it installed)
                       (devdocs-install (list (cons 'slug it))))) docs))
     docs))
@@ -648,9 +646,10 @@ docs."
   ;; current-prefix, so we null it.
   ;; If user does have it setup, we want to temporarily change its value for
   ;; use with the current repl.
+  (cl-assert (stringp docs))
   (let ((devdocs-history nil)
         (current-prefix-arg nil)
-        (devdocs-current-docs docs)
+        (devdocs-current-docs (s-split " " docs))
         (word (or (thing-at-point 'symbol) "")))
     ;; (devdocs-lookup nil word) ⇒ Quits abruptly when keyword is not a
     ;; valid candidate!
@@ -743,32 +742,85 @@ docs."
     (buffer-string)))
 
 ;;; pre-configured repls
-(defun repl-driven-development--preconfigured-terminal-REPL (keys)
+(defun repl-driven-development-preconfiguration:terminal (keys)
   "A Bash REPL configuration, bound to keybinding KEYS."
+  ;; Disable “bash” intro message
+  (setenv "BASH_SILENCE_DEPRECATION_WARNING" "1")
   (repl-driven-development
    keys
    "bash"
    :name 'terminal-eval
-   :prompt "^bash.*?\\$"))
+   :docs "bash"
+   :prompt "^bash.*?\\$"
+   :init "echo \"Enjoy the Terminal with Emacs (｡◕‿◕｡)\""))
 
-(defun repl-driven-development--preconfigured-javascript-REPL (keys)
-  "A NodeJS REPL configuration, bound to keybinding KEYS."
+(defun repl-driven-development-preconfiguration:applescript (keys)
+  "An AppleScript REPL configuration, bound to keybinding KEYS.
+
+✔ Supports multi-line output.
+⚠ Each snippet must be a self-contained program; i.e., snippets do not share state."
+  ;; Disable “bash” intro message
+  (setenv "BASH_SILENCE_DEPRECATION_WARNING" "1")
+  (repl-driven-development
+   [C-x C-a] "bash"
+   :name 'applescript-eval
+   :blink 'pulsar-blue
+   :prompt "\\(bash.*?\\$\\)\\|>"
+   :init "echo \"Enjoy AppleScript with Emacs (｡◕‿◕｡)\"
+          while true; do
+          read input
+          osa_script=\"\"
+          while [ \"$input\" != \";;\" ]; do
+              osa_script=\"$osa_script$input\"$'\n'
+              read input
+          done
+          echo $(osascript -e \"$osa_script\") && echo \"Done (◕‿◕)\"
+          done"
+   :input-rewrite-fn (lambda (in) (format "%s\n;;" in))))
+
+(defun repl-driven-development-preconfiguration:javascript (keys)
+  "A NodeJS REPL configuration, bound to keybinding KEYS.
+
+✔ Defines variable “axios”, if the library is installed,
+e.g., “npm i -g axios”
+
+✔ Docs: Vanialla JS, Web APIs (e.g., “fetch”), Axios, Express.
+"
+  (setenv "NODE_DISABLE_COLORS" "1") ;; So we don't display funky colour code upon insert
   (repl-driven-development
    keys "node"
    :name 'javascript-eval
    :prompt ">"
+   :docs "javascript dom axios express"
    :input-rewrite-fn
-   #'repl-driven-development--strip-out-C-style-comments&newlines))
+   #'repl-driven-development--strip-out-C-style-comments&newlines
+   ;; Load “axios”, if it's present.
+   ;; By keeping everything in “one line”, there is only one output emitted.
+   ;; Namely, I don't want users to see the output of loading axios.
+   :init (s-join ";" '("var axios = null"
+                       "try { axios = require('axios') } catch (error) { }"
+                        "shell = command => require('child_process').execSync(command).toString().trim()"
+                        ;; Escape quotes/etc by going to base64 via JS built-in `btoa`, then decode base64 on the Lisp side
+                        "emacs = { eval: sexp => shell(`emacsclient -e '(eval (read (base64-decode-string \"${btoa(sexp)}\")))'`) }"
+                       "\"Enjoy JavaScript with Emacs (｡◕‿◕｡)!\""))))
 
 (defun repl-driven-development--strip-out-C-style-comments&newlines (str)
-  "Strip out C-style single-line and multi-line comments from STR."
+  "Strip out C-style single-line and multi-line comments from STR.
+
+Do not touch the tokens “https://” nor “http://”."
+  (let ((http (pp-to-string (gensym)))
+        (https (pp-to-string (gensym))))
   (thread-last
     str
     (s-replace-regexp "/\\*.\\*/" "")
+    (s-replace-regexp "http://" http)
+    (s-replace-regexp "https://" https)
     (s-replace-regexp "//.*$" "")
-    (s-replace-regexp "\n" "")))
+    (s-replace-regexp "\n" "")
+    (s-replace-regexp http "http://")
+    (s-replace-regexp https "https://"))))
 
-(defun repl-driven-development--preconfigured-python-REPL (keys)
+(defun repl-driven-development-preconfiguration:python (keys)
   "A Python REPL configuration, bound to keybinding KEYS.
 
 This configuration fixes the following shortcomings of the default Python CLI
@@ -787,9 +839,10 @@ repl:
    body."
   (repl-driven-development
    keys
-   "python3"
+   "python3 -q"  ;; “-q” to avoid showing intro message
    :prompt ">>>"
    :name 'python-eval
+   :docs "python~3.5"
    :blink 'pulsar-red
    ;; Remove empty lines: In the middle of a def|class, they abruptly terminate
    ;; the def|class!
@@ -806,9 +859,10 @@ repl:
               (s-replace-regexp " *def \\([^(]*\\).*" "Defined “\\1”" input))
              ((s-starts-with? "class" input)
               (s-replace-regexp " *class \\([^(:]*\\).*" "Defined “\\1”:" input))
-             (t result))))))
+             (t result))))
+      :init "print(\"Enjoy Python with Emacs (｡◕‿◕｡)\")"))
 
-(defun repl-driven-development--preconfigured-java-REPL (keys)
+(defun repl-driven-development-preconfiguration:java (keys)
   "A Java REPL configuration, bound to keybinding KEYS.
 
 ✔ This REPL is aware of all JARs in the ~/.m2/repository; the location of
