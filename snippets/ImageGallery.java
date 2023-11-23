@@ -8,18 +8,16 @@
  *
  *** Gif Setup *****************************************************************
  (progn
-  ;; Make the M-RET command insert “* ”
-  (bind-key* "M-RET" (lambda () (interactive) (insert "\n") (c-indent-command) (insert "* ")))
   ;; Auto-format on save;; For example, for Java, I need to:
   ;; brew install clang-format
-  (format-all-mode +1) ;; or: M-x format-all
+  ;; (format-all-mode +1) ;; or: M-x format-all
   ;; Don't prompt me which formatter to use; just use the defaults.
   ;; For example, for Java, I need to: brew install clang-format
-  (setq format-all-formatters format-all-default-formatters)
+  ;; (setq format-all-formatters format-all-default-formatters)
   (setq frame-title-format
   "   Teaching a 𝒥𝒶𝓋𝒶 runtime to be an image gallery application")
-  (defun doom-modeline-buffer-file-name ()  "
-        https://github.com/alhassy/repl-driven-development ")
+  (rename-buffer " 🚀 https://github.com/alhassy/repl-driven-development 👀\t")
+  (setq mode-line-format '(("%e" mode-line-buffer-identification) keycast-mode-line))
   (eglot-java-mode +1) ;; Inline overlays of arg names, syntax/type checks
   (company-mode +1) ;; Completions for methods
   (flyspell-mode -1) ;; Don't check my spelling
@@ -29,34 +27,28 @@
   (re-search-forward "public static void main.String.. args.")
   (mark-sexp) (narrow-to-region (region-beginning) (region-end))
   (pop-mark)
-  (scroll-down -2)
+  (scroll-down -1)
   ;; (my/load-theme 'shanty-themes-light)
   (my/load-theme 'spacemacs-light)
-  (message "Fold specific regions, then click on them to show/discuss them."))
+  (message "See more code with C-x C-o; i.e., delete-blank-lines"))
 
- *** Gif maker; needs privileges to capture screen ***************************
- *
- * ⇒ Move the screen capture frame while recording.
- * ⇒ Pause and restart recording, with optional inserted text messages.
- * ⇒ Global hotkey (shift+space) to toggle pausing while recording
- * (system-packages-ensure "licecap") ;; Use: ⌘-SPACE licecap
- *
- * Finally, ⌘-SPACE screenbrush. Use M-TAB to toggle it on/off; SHIFT for
- * flashlight focus.
- *
+ *** Screen Capture Misc. ***************************
+
+;; Pearl - Mirror in your menubar
+(applescript-eval-string "tell application \"Pearl\" to activate")
+
+(applescript-eval-string "
+ tell application \"QuickTime Player\"
+     activate
+     start (new screen recording)
+end tell")
+
  *** Setup the directory of photos! ******************************************
 // rm -rf ~/Downloads/random-images/; cp -r ~/Documents/unsplash-images
 ~/Downloads/random-images/; cd ~/Downloads/random-images; mogrify -resize
 300x300 ./*.jpg; cp pouring-coffee---photo-by-mhrezaa-on-unsplash.jpg
 love-0.jpg; cp pouring-water---photo-by-mhrezaa-on-unsplash.jpg love-1.jpg
- *
- * END SETUP
  */
-
-/*
-      ;; Set “C-x C-j” to evaluate arbitrary Java code (｡◕‿◕｡)
-      (repl-driven-development [C-x C-j] java)
-*/
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -67,8 +59,58 @@ import javax.swing.*;
 
 class ImageGallery {
   public static void main(String[] args) {
-         /*         𝓖𝓸𝓪𝓵: 𝑺𝒆𝒆 𝒕𝒉𝒊𝒏𝒈𝒔 𝑨𝑺𝑨𝑷, 𝒂𝒏𝒅 𝒄𝒓𝒆𝒂𝒕𝒆 𝒃𝒚 𝒓𝒆𝒂𝒄𝒕𝒊𝒏𝒈 (｡◕‿◕｡)         */
+        /*         𝓖𝓸𝓪𝓵: 𝑺𝒆𝒆 𝒕𝒉𝒊𝒏𝒈𝒔 𝑨𝑺𝑨𝑷, 𝒂𝒏𝒅 𝒄𝒓𝒆𝒂𝒕𝒆 𝒃𝒚 𝒓𝒆𝒂𝒄𝒕𝒊𝒏𝒈 (｡◕‿◕｡)
 
+        ;; Set “C-x C-j” to evaluate arbitrary Java code
+        (repl-driven-development [C-x C-j] java)
+
+        // See the solution (echoed in a tooltip) to FizzBuzz by selecting and evaluating:
+        IntStream.range(0, 31)
+                 .mapToObj(i -> i % 15 == 0 ? "FizzBuzz"
+                              : i % 3  == 0 ? "Fizz"
+                              : i % 5  == 0 ? "Buzz"
+                              : String.valueOf(i)).toList()
+         */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /*         𝓖𝓸𝓪𝓵: 𝑺𝒆𝒆 𝒕𝒉𝒊𝒏𝒈𝒔 𝑨𝑺𝑨𝑷, 𝒂𝒏𝒅 𝒄𝒓𝒆𝒂𝒕𝒆 𝒃𝒚 𝒓𝒆𝒂𝒄𝒕𝒊𝒏𝒈 (｡◕‿◕｡)         */
         var frame = new JFrame(); // ⇒ Your cursor loses control: There's a JFrame created!
 
 
@@ -195,7 +237,7 @@ class ImageGallery {
 
 
         // We see a super tiny new dialog; let's enlarge it
-        frame.setSize(450, 450);
+        frame.setSize(500, 500);
 
 
 
@@ -890,12 +932,10 @@ class ImageGallery {
 
 
         // I'd like to see the name of the image, whenever we click on a new image.
-        // Also fit the frame to the minimal amount of space required: Pack it.
         watDo = e -> {
                 var icon = allImages.get(clicks++ % allImages.size());
                 image.setIcon(icon);
                 frame.setTitle(icon.toString());
-                frame.pack();
             };
 
 
@@ -948,7 +988,6 @@ class ImageGallery {
  * To “update” an action listener, we first need to remove it, then redefine it, then register it.
  *
  * Why? I'm not sure.
- *
  * It'd be nice if we could just update the binding, but under-the-hood it may be the case that
  * the binding is copied and not used by reference.
  *
@@ -979,7 +1018,7 @@ class ImageGallery {
     var frame = new JFrame();
     frame.setVisible(true);
     frame.setAlwaysOnTop(true);
-    frame.setSize(450, 450);
+    frame.setSize(500, 500);
     frame.getContentPane().setBackground(Color.CYAN);
     // Let's add an image first, so that we have an initial image that can be
     // mutated
@@ -998,6 +1037,5 @@ class ImageGallery {
                 var icon = allFiles.get(clicks++ % allFiles.size());
                 image.setIcon(icon);
                 frame.setTitle(icon.toString());
-                frame.pack();
                 });
  */

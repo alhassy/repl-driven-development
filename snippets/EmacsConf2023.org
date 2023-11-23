@@ -17,7 +17,6 @@
   String username = System.getProperty("user.name");
   JOptionPane.showMessageDialog(null, "Hello, " + username);
 
-
 ** /This means you can keep code in regular text files that does things 😲/
 
 *** We can embed “hyperlinks” anywhere...
@@ -110,50 +109,34 @@ For Python,
 | Restart evaluation process  |   | ~C-u -1~ prefix                       |
 
 * An overview of REPL Driven Development
+** Modifying A BallPit Runtime, at runtime
 
-*Demo: Modifying A BallPit Runtime, at runtime*
+Since we can see the balls...
 
-[[~/blog/images/rdd-benefits.png]]
 
-# Show how “balls[2]” can be modified ---the ball pit code does not matter, the
-# live change is what we want to discuss
+                                                             [[~/blog/images/rdd-benefits.png]]
 
-* Interactively Solving FizzBuzz with Python
+# The ball pit code does not matter, the live change is what we want to discuss
+balls.get(2).diameter = 100;
+balls.get(2).color = Color.blue;
+balls = IntStream.range(0, 50).mapToObj(__ -> new Ball()).toList();
 
-A game to teach children divsion...
+** Interactively Solving FizzBuzz with Python
+
+A game to teach children division...
 
   /Write numbers 1..100 and replace multiples of 3 with “Fizz”, multiples of 5
               with “Buzz”, and multiples of both with “FizzBuzz”./
 
-** Script
-1. ~range(1, 100)~
-2. Huh C-x C-p shows nothing!
-3. C-u C-u to see the docs, notice that range is a generator, so wrap it with
-   ~list~
-4. ~list(range(1, 100))~
-5. Huh, we're missing ‘100’!
-6. C-u C-u to see the docs of range again.
-7. ~list(range(1, 101))~
-8. ~list(map(lambda i: i, range(1,101)))~
-9. Multiples of 3 ...
-10. ~list(map(lambda i: 'Fizz'*(not i%3), range(1,101)))~
-11. Huh, we're seeing empty strings! Sine ~'Fizz' * 0~ is ~''~!
-12. ~list(map(lambda i: 'Fizz'*(not i%3) or i, range(1,101)))~
-13. Multiples of 5...
-14. ~list(map(lambda i: 'Fizz'*(not i%3) or 'Buzz'*(not i%5) or i, range(1,101)))~
-15. Huh, index 15 should be ~FizzBuzz~ not just ~Fizz~!
-16. 15 is a multiple of both 3 and 5, so ~or~ is not approriate, we should concat instead!
-17. ~list(map(lambda i: 'Fizz'*(not i%3) + 'Buzz'*(not i%5) or i, range(1,101)))~
-18. All done, yay!
+                                       [[elisp:(progn (execute-kbd-macro (kbd "M-p")) (when nil I include the call twice so I can see the command name appear in the keycast, that is all) (execute-kbd-macro (kbd "M-p")))][﴾𝒮𝓉𝒶𝓇𝓉﴿]]
 
-* Rapidly growing a Java runtime to be a photo gallery application, from scratch
-
-
+** Rapidly growing a Java runtime to be a photo gallery application, from scratch
 
                                        [[elisp:(progn (execute-kbd-macro (kbd "M-j")) (when nil I include the call twice so I can see the command name appear in the keycast, that is all) (execute-kbd-macro (kbd "M-j")))][﴾𝒮𝓉𝒶𝓇𝓉﴿]]
 
 * Implementing read protocols to use RDD to insert results of evaluation, for growing a test suite
-** How to /show/ program output?
+** Demo
+                                       [[elisp:(switch-to-buffer "YoutubeShorts.java")][﴾𝒮𝓉𝒶𝓇𝓉﴿]]
 
 #+begin_src latex-as-png :file rdd-print.pdf :resolution "520" :results raw value replace :exports none
 \begin{center}
@@ -166,9 +149,9 @@ A game to teach children divsion...
 {\newline \color{gray}\texttt{www.alhassy.com/repl-driven-development}}
 \end{center}
 #+end_src
+** How to /show/ program output?
 
-#+RESULTS:
-[[file:rdd-print.png]]
+                            [[file:rdd-print.png]]
 
 NOTE: JSON    ⇒ doc:json-navigator-navigate-region
       browser ⇒ doc:xwidget-webkit-browse-url
@@ -186,6 +169,9 @@ NOTE: JSON    ⇒ doc:json-navigator-navigate-region
      (defun 𝓅𝓇𝒾𝓃𝓉 (d) (s-trim (s-collapse-whitespace (pp-to-string d))))
      (defun 𝓇ℯ𝒶𝒹 (s) (read s))
 #+end_src
+
+#+RESULTS: startup-code
+: EmacsConf:\ Let\'s\ see\ some\ more...
 
 ** /“BRORP”: Bring your own Read Protocol!/
 
@@ -219,9 +205,11 @@ NOTE: JSON    ⇒ doc:json-navigator-navigate-region
   - See doc:repl-driven-development--parse-pretty-printed-java
   - Currently only supporting Java ~record~-s, for arbitrary classes we could
     convert to JSON first (using a 3ʳᵈ-party library like ~GSON~).
+                            [[file:rdd-read.png]]
 
 + Blue → Purple :: Custom Lisp algorithms ---e.g., to handle lists, ~null~, maps, etc.
   - See doc:repl-driven-development--lisp-to-java
+                              🔑  /Parsing Expression Grammars/ (i.e., ~peg.el~)
 
 * Use Case: RDD & Job Interviews
 
@@ -244,12 +232,15 @@ Presentation Setup Code
 
 #+name: startup-code
 #+begin_src emacs-lisp
+(setq display-time-format "Sat Dec 2, 2023")
+(display-time-mode)
+(require 'java-ts-mode)
 ;; Remove icon in title bar ---may take effect for /new/ frames, not current frame.
 ;; https://emacs.stackexchange.com/questions/33680/how-to-remove-the-icon-in-the-titlebar
 (shell-command "defaults write org.gnu.Emacs HideDocumentIcon YES")
 (set-frame-parameter (selected-frame) 'cursor-color "LightPink1")
-(setq frame-title-format "    𝓔𝓶𝓪𝓬𝓼 𝓒𝓸𝓷𝓯 𝟚𝟘𝟚𝟛   ~   Editor Integrated REPL Driven Development for all Languages   ~   ⟅10 minutes⟆")
-(keycast-header-line-mode)
+;; (setq frame-title-format "    𝓔𝓶𝓪𝓬𝓼 𝓒𝓸𝓷𝓯 𝟚𝟘𝟚𝟛   ~   Editor Integrated REPL Driven Development for all Languages   ~   ⟅10 minutes⟆")
+(setq frame-title-format "    𝓔𝓶𝓪𝓬𝓼 𝓒𝓸𝓷𝓯 𝟚𝟘𝟚𝟛   ~   Editor Integrated REPL Driven Development for all Languages")
 (org-toggle-inline-images)
 (repl-driven-development [C-x C-j] java)
 (repl-driven-development [C-x C-n] javascript)
@@ -259,17 +250,16 @@ Presentation Setup Code
 (eros-mode -1) ;; I don't want to see the ELisp outputs of executing the above commands.
 (writegood-mode -1) (flyspell-mode -1) ;; Don't highlight intentional spelling errors, like BRORP.
 
-;; To have keycast working with doom-modeline, I first need to turn off the latter then turn it on.
-(doom-modeline-mode -1)
-(keycast-mode +1)
-(doom-modeline-mode +1)
-
 ;; M-x org-tree-slide
 ;;
 ;; https://github.com/takaxp/org-tree-slide#control-functions
 ;; org-tree-slide-move-next-tree (C->)
 ;; org-tree-slide-move-previous-tree (C-<)
 ;; org-tree-slide-content (C-x s c)
+(setq org-tree-slide-header nil) ;; Don't show title, author, date.
+(bind-key "M-n" #'org-tree-slide-move-next-tree)
+(bind-key "M-p" #'org-tree-slide-move-previous-tree)
+(bind-key "M-k" (defun keycast-on () (interactive) (doom-modeline-mode -1) (keycast-mode +1)))
 
 ;; Ensure Emacs is not full screen, to see java/applescript animations
 (defun my/maximize-frame ()
@@ -283,32 +273,53 @@ This is not the same as fullscreen mode."
 
 ;; Quickly jump to my Java code example
 ;; Use an informative name, since it'll show-up via keycast when I press M-j.
+ (bind-key* "M-s" (lambda () (interactive)
+                    (org-tree-slide-mode)
+                    ;; To have keycast working with doom-modeline, I first need to turn off the latter then turn it on.
+(doom-modeline-mode -1)
+(keycast-mode +1)
+(keycast-mode-line-mode +1)))
+
+(org-tree-slide-mode)
  (bind-key* "M-j"
             (defun EmacsConf:\ Teaching\ a\ 𝒥𝒶𝓋𝒶\ runtime\ to\ be\ an\ image\ gallery\ application ()
               (interactive)
               (find-file "./ImageGallery.java")
               (java-ts-mode)
-              (my/maximize-frame)
+              ;; (my/maximize-frame)
               (eglot-java-mode +1) ;; Inline overlays of arg names, syntax/type checks
               (company-mode +1) ;; Completions for methods
               (flyspell-mode -1) ;; Don't check my spelling
               (rainbow-delimiters-mode +1)  ;; Colourful rainbow parens
               (rainbow-identifiers-mode +1) ;; Name-based/semantic highlighting
-              (keycast-header-line-mode +1) ;; Show my keybindings
               (re-search-forward "END SETUP")
               (re-search-forward "public static void main.String.. args.")
               (mark-sexp) (narrow-to-region (region-beginning) (region-end))
               (pop-mark)
               (scroll-down -2)
               ;; Ensure Emacs is not full screen, to see java/applescript animations
-              (set-frame-parameter nil 'fullscreen nil)
+              ;; (set-frame-parameter nil 'fullscreen nil)
               (my/load-theme 'spacemacs-light)))
 
+ (bind-key* "M-p"
+            (defun EmacsConf:\ Interactively\ Solving\ FizzBuzz\ with\ 𝓟𝔂𝓽𝓱𝓸𝓷 ()
+              (interactive)
+              (find-file "./FizzBuzz.py")
+              (python-mode)
+              ;; (my/maximize-frame)
+              (call-interactively #'eglot) ;; Inline overlays of arg names, syntax/type checks
+              (company-mode +1) ;; Completions for methods
+              (flyspell-mode -1) ;; Don't check my spelling
+              (rainbow-delimiters-mode +1)  ;; Colourful rainbow parens
+              (rainbow-identifiers-mode +1) ;; Name-based/semantic highlighting
+              (my/load-theme 'spacemacs-light)))
+
+;; Wait, this is just C-x C-o; i.e., delete-blank-lines
 (bind-key "M-SPC"
           (cl-defun EmacsConf:\ Let\'s\ see\ some\ more... ()
             (interactive)
             (delete-all-space)
             (insert "\n\n")
             (indent-for-tab-command))
-          java-ts-mode-map)
+          prog-mode-map)
 #+end_src

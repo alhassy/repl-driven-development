@@ -762,7 +762,7 @@ DOCS is a space seperated sequence of identifiers for dev-docs."
   ;; Disable “bash” intro message
   (setenv "BASH_SILENCE_DEPRECATION_WARNING" "1")
   (repl-driven-development
-   [C-x C-a] "bash"
+   keys "bash"
    :name 'applescript-eval
    :blink 'pulsar-blue
    :prompt "\\(bash.*?\\$\\)\\|>"
@@ -836,7 +836,10 @@ repl:
 
 ❌ The Python repl emits nothing when a def|class declaration is submitted.
 ✔ This configuration emits a “Defined ⋯” message, along with the declaration's
-   body."
+   body.
+
+NOTE: Get a nice IDE experience with “sudo npm install -g pyright”, then
+open a Python file and invoke “M-x eglot”."
   (repl-driven-development
    keys
    "python3 -q"  ;; “-q” to avoid showing intro message
